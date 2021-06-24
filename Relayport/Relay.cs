@@ -1,6 +1,7 @@
 //This is the device: https://thepihut.com/products/4-relay-heavy-duty-stackable-card-for-raspberry-pi?variant=32299393548350
-// Convert using https://github.com/unosquare/raspberryio#using-the-spi-bus
-// or https://github.com/dotnet/iot/blob/main/Documentation/raspi-i2c.md
+//   or here: https://shieldslist.com/raspberry-pi-shield/4-relay-heavy-duty-stackable-card-for-raspberry-pi/
+// Converted from python code here: https://github.com/SequentMicrosystems/4relay-rpi/blob/master/python/4relay/lib4relay/__init__.py
+// Instruction manual for the hardware is here: https://cdn.shopify.com/s/files/1/0176/3274/files/4-RELAY-UsersGuide.pdf?v=1596363564
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -13,6 +14,10 @@ namespace RelayPort
     {
         private II2CDevice _i2c;
 
+        /// <summary>
+        /// Creates a new instance of the class to control the 4 relay header board
+        /// </summary>
+        /// <param name="stack">Get the stack number from the jumper settings, see manual</param>
         public FourRelay(int stack)
         {
             stack = 0x07 ^ stack;
@@ -43,30 +48,30 @@ namespace RelayPort
             4
         };
 
-        public byte relayToIO(byte relay)
+        public byte RelayToIO(byte relay)
         {
-            byte val = (byte) 0;
-            foreach (var i in Enumerable.Range(0, 4))
+            byte value = (byte) 0;
+            foreach (var index in Enumerable.Range(0, 4))
             {
-                if ((relay & 1 << i) != 0)
+                if ((relay & 1 << index) != 0)
                 {
-                    val = (byte) (val + RelayMaskRemap[i]);
+                    value = (byte) (value + RelayMaskRemap[index]);
                 }
             }
-            return val;
+            return value;
         }
 
         public byte IoToRelay(byte iov)
         {
-            var val = 0;
-            foreach (var i in Enumerable.Range(0, 4))
+            var value = 0;
+            foreach (var index in Enumerable.Range(0, 4))
             {
-                if ((iov & RelayMaskRemap[i]) != 0)
+                if ((iov & RelayMaskRemap[index]) != 0)
                 {
-                    val = val + (1 << i);
+                    value = value + (1 << index);
                 }
             }
-            return (byte) val;
+            return (byte) value;
         }
 
         private byte Check()
@@ -80,53 +85,64 @@ namespace RelayPort
             return _i2c.ReadAddressByte(RELAY4_INPORT_REG_ADD);
         }
 
-        public void Set(byte relay, byte value)
+        /// <summary>
+        /// Sets the value of a specified relay
+        /// </summary>
+        /// <param name="relay">The number of the relay from 1 to 4</param>
+        /// <param name="value">The value to set 1 = on and 0 = off</param>
+        public void SetRelay(byte relay, byte value)
         {
             if (relay < 1 || relay > 4)
             {
                 throw new ArgumentException("Invalid relay number");
             }
-            var oldVal = Check();
-            oldVal = IoToRelay(oldVal);
+            var oldValue = Check();
+            oldValue = IoToRelay(oldValue);
             if (value == 0)
             {
-                oldVal = (byte) (oldVal & ~(1 << relay - 1));
-                oldVal = relayToIO(oldVal);
-                _i2c.WriteAddressByte(RELAY4_OUTPORT_REG_ADD, oldVal);
+                oldValue = (byte) (oldValue & ~(1 << relay - 1));
+                oldValue = RelayToIO(oldValue);
+                _i2c.WriteAddressByte(RELAY4_OUTPORT_REG_ADD, oldValue);
             }
             else
             {
-                oldVal = (byte) (oldVal | 1 << relay - 1);
-                oldVal = relayToIO(oldVal);
-                _i2c.WriteAddressByte(RELAY4_OUTPORT_REG_ADD, oldVal);
+                oldValue = (byte) (oldValue | 1 << relay - 1);
+                oldValue = RelayToIO(oldValue);
+                _i2c.WriteAddressByte(RELAY4_OUTPORT_REG_ADD, oldValue);
             }
         }
 
+        /// <summary>
+        /// Gets the on/off status of a relay
+        /// </summary>
+        /// <param name="relay">The number of the relay to query from 1 to 4</param>
+        /// <returns>1 for on and 0 for off</returns>
         public byte Get(byte relay)
         {
             if (relay < 1 || relay > 4)
             {
                 throw new ArgumentException("Invalid relay number");
             }
-            var val = Check();
-            val = IoToRelay(val);
-            val = (byte) (val & 1 << relay - 1);
-            if (val == 0)
+            var value = Check();
+            value = IoToRelay(value);
+            value = (byte) (value & 1 << relay - 1);
+            if (value == 0)
             {
                 return 0;
             }
-            else
-            {
-                return 1;
-            }
+            return 1;
         }
 
+        /// <summary>
+        /// Sets all the relays to a specific value
+        /// </summary>
+        /// <param name="value"></param>
         public void SetAll(byte value)
         {
-            Set(1, value);
-            Set(2, value);
-            Set(3, value);
-            Set(4, value);
+            SetRelay(1, value);
+            SetRelay(2, value);
+            SetRelay(3, value);
+            SetRelay(4, value);
         }
     }
 }

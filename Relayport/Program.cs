@@ -24,16 +24,16 @@ namespace RelayPort
                 {
                     Console.WriteLine($"Values of Relays are 1:{relay.Get(1)} 2:{relay.Get(2)} 3:{relay.Get(3)} 4:{relay.Get(4)}");
                     Thread.Sleep(1000);
-                    relay.Set(1, 1);
+                    relay.SetRelay(1, 1);
                     Console.WriteLine($"Values of Relays are 1:{relay.Get(1)} 2:{relay.Get(2)} 3:{relay.Get(3)} 4:{relay.Get(4)}");
                     Thread.Sleep(1000);
-                    relay.Set(2, 1);
+                    relay.SetRelay(2, 1);
                     Console.WriteLine($"Values of Relays are 1:{relay.Get(1)} 2:{relay.Get(2)} 3:{relay.Get(3)} 4:{relay.Get(4)}");
                     Thread.Sleep(1000);
-                    relay.Set(3, 1);
+                    relay.SetRelay(3, 1);
                     Console.WriteLine($"Values of Relays are 1:{relay.Get(1)} 2:{relay.Get(2)} 3:{relay.Get(3)} 4:{relay.Get(4)}");
                     Thread.Sleep(1000);
-                    relay.Set(4, 1);
+                    relay.SetRelay(4, 1);
                     Console.WriteLine($"Values of Relays are 1:{relay.Get(1)} 2:{relay.Get(2)} 3:{relay.Get(3)} 4:{relay.Get(4)}");
                     Thread.Sleep(1000);
                     relay.SetAll(0);
