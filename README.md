@@ -5,7 +5,7 @@ This involved porting some python code to C#.
 
 Setup
 
-![Picture of the raspberry pi set up with hardware](https://github.com/johnstaveley/RaspberryPiControl/PictureOfRaspberryPiSetup.jpg "Picture of the raspberry pi setup with hardware")
+![Picture of the raspberry pi set up with hardware](https://github.com/johnstaveley/RaspberryPiControl/blob/master/PictureOfRaspberryPiSetup.jpg "Picture of the raspberry pi setup with hardware")
 
 Stack 4 relay board on top of Raspberry pi
 Servo 1: Attach Brown to pin 9, Red to pin 2 and Yellow to pin 12
