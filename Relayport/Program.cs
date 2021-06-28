@@ -6,6 +6,7 @@ using System.Device.Pwm.Drivers;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Iot.Device.Ssd13xx.Commands.Ssd1306Commands;
 using Unosquare.RaspberryIO;
 using Unosquare.WiringPi;
 
@@ -68,20 +69,31 @@ namespace RelayPort
                 {
                     case "Servo":
                         ConsoleHelper.WriteGreenMessage($"Setting servo to value {controlAction.Value}");
-                        servo.DutyCycle = controlAction.Value;
+                        if (controlAction.Value >= 0 && controlAction.Value <=1) {
+                            servo.DutyCycle = controlAction.Value;
+                        } else
+                        {
+                            status = 400;
+                            message = $"Servo value of {controlAction.Value} is illegal but be between 0 and 1 inclusive";
+                        }
                         break;
                     case "Relay":
-                        if (controlAction.Number == -1)
+                        var relay = (int) controlAction.Number;
+                        if (relay == -1)
                         {
                             ConsoleHelper.WriteGreenMessage($"Setting all relays to value {controlAction.Value}");
                             fourRelay.SetAll((byte) controlAction.Value);
-                        } else {
+                        } else if (relay > 0 && relay < 5) {
                             ConsoleHelper.WriteGreenMessage($"Setting relay {controlAction.Number} to value {controlAction.Value}");
-                            fourRelay.SetRelay((byte) controlAction.Number, (byte) controlAction.Value);
+                            fourRelay.SetRelay((byte) relay, (byte) controlAction.Value);
+                        } else
+                        {
+                            status = 400;
+                            message = $"Relay address {relay} unknown. Must be 1 to 4 or -1 for all relays";
                         }
                         break;
                     default:
-                        message = $"Unknown method: {controlAction.Method}";
+                        message = $"Unknown method: {controlAction.Method}. Must be either 'Relay' or 'Servo'";
                         ConsoleHelper.WriteRedMessage(message);
                         status = 400;
                         break;

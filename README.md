@@ -16,9 +16,28 @@ This involved porting some python code to C#.
   - IoT Devices. Add your Raspberry Pi
   - Networking. Don't put in IP restrictions if you want your azure function to be able to contact the IoT Hub
 
+## Operation
+
+You can use the IoT Hub explorer to send direct messages to the Raspberry Pi and control its hardware using the 'ControlAction' direct method and following json package:
+{
+	"Method": Relay or Servo,
+	"Number": value of the hardware if applicable,
+	"Value": 0 or 1 for relays and 0 to 1 for servos
+}
+
+e.g. this will turn Relay 4 on:
+{
+	"Method": "Relay",
+	"Number": 4,
+	"Value": 1
+}
+
+if there is a mistake then a bad request will be returned to you
+
 ## Tech notes
 
 Publish as single file does not seem to work, you get a file not found error
+
 You may have to follow the instructions here to run without sudo: https://raspberrypi.stackexchange.com/questions/40105/access-gpio-pins-without-root-no-access-to-dev-mem-try-running-as-root
 sudo apt-get update
 sudo apt-get upgrade
