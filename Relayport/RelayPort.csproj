@@ -6,13 +6,22 @@
     <AssemblyName>RelayPort</AssemblyName>
     <RootNamespace>RelayPort</RootNamespace>
     <StartupObject>RelayPort.Program</StartupObject>
+    <UserSecretsId>c1bf6fda-529f-43c5-ab88-d512c4d213fa</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Iot.Device.Bindings" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.37.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="5.0.0" />
     <PackageReference Include="System.Device.Gpio" Version="1.4.0" />
     <PackageReference Include="Unosquare.Raspberry.IO" Version="0.27.1" />
     <PackageReference Include="Unosquare.WiringPi" Version="0.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
