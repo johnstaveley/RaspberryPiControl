@@ -2,8 +2,10 @@
 using Newtonsoft.Json;
 using RelayPort.Model;
 using System;
+using System.Collections.Generic;
 using System.Device.Pwm.Drivers;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unosquare.RaspberryIO;
@@ -77,7 +79,30 @@ namespace RelayPort
                             message = $"Servo value of {controlAction.Value} is illegal but be between 0 and 1 inclusive";
                         }
                         break;
-                    case "Relay":
+                    case "GetRelay":
+                        var getRelayNumber = (int) controlAction.Number;
+                        if (getRelayNumber == -1)
+                        {
+                            ConsoleHelper.WriteGreenMessage($"Getting value of all relays");
+                            List<Tuple<int, byte>> responses = new List<Tuple<int, byte>>();
+                            foreach (var relayNumber in Enumerable.Range(1, 4))
+                            {
+                                responses.Add(new Tuple<int, byte>(relayNumber, _fourRelayBoard.Get((byte) relayNumber)));
+                            }
+                            status = 200;
+                            message = string.Join(", ", responses.Select(a => $"Relay {a.Item1} has value {a.Item2}"));
+                        } else if (getRelayNumber is > 0 and < 5) {
+                            ConsoleHelper.WriteGreenMessage($"Getting relay {controlAction.Number}");
+                            var relayResponse = _fourRelayBoard.Get((byte) getRelayNumber);
+                            status = 200;
+                            message = $"Relay {getRelayNumber} value is {relayResponse}";
+                        } else
+                        {
+                            status = 400;
+                            message = $"GetRelay - Relay address {getRelayNumber} unknown. Must be 1 to 4 or -1 for all relays";
+                        }
+                        break;
+                    case "SetRelay":
                         var relay = (int) controlAction.Number;
                         if (relay == -1)
                         {
@@ -86,7 +111,7 @@ namespace RelayPort
                             if (!relayResponse.Success)
                             {
                                 ConsoleHelper.WriteRedMessage(relayResponse.Message);
-                            }
+                            } 
                         } else if (relay is > 0 and < 5) {
                             ConsoleHelper.WriteGreenMessage($"Setting relay {controlAction.Number} to value {controlAction.Value}");
                             var relayResponse = _fourRelayBoard.SetRelay((byte) relay, (byte) controlAction.Value);
@@ -97,7 +122,7 @@ namespace RelayPort
                         } else
                         {
                             status = 400;
-                            message = $"Relay address {relay} unknown. Must be 1 to 4 or -1 for all relays";
+                            message = $"SetRelay - Relay address {relay} unknown. Must be 1 to 4 or -1 for all relays";
                         }
                         break;
                     default:

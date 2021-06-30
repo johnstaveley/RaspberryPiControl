@@ -26,7 +26,7 @@ You can use the IoT Hub explorer to send direct messages to the Raspberry Pi and
 
 e.g. this will turn Relay 4 on:
 {
-	"Method": "Relay",
+	"Method": "SetRelay",
 	"Number": 4,
 	"Value": 1
 }
