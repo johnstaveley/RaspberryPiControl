@@ -5,12 +5,14 @@
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using Microsoft.Azure.Amqp;
+using RelayPort.Model;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Abstractions;
 
 namespace RelayPort
 {
-    public class FourRelay
+    public class FourRelayBoard
     {
         private II2CDevice _i2c;
 
@@ -18,7 +20,7 @@ namespace RelayPort
         /// Creates a new instance of the class to control the 4 relay header board
         /// </summary>
         /// <param name="stack">Get the stack number from the jumper settings, see manual</param>
-        public FourRelay(int stack)
+        public FourRelayBoard(int stack)
         {
             stack = 0x07 ^ stack;
             if (stack < 0 || stack > 7)
@@ -90,11 +92,13 @@ namespace RelayPort
         /// </summary>
         /// <param name="relay">The number of the relay from 1 to 4</param>
         /// <param name="value">The value to set 1 = on and 0 = off</param>
-        public void SetRelay(byte relay, byte value)
+        public ResponseModel SetRelay(byte relay, byte value)
         {
+            var responseModel = new ResponseModel();
             if (relay < 1 || relay > 4)
             {
-                throw new ArgumentException("Invalid relay number");
+                responseModel.Message = $"Invalid relay number {relay}";
+                return responseModel;
             }
             var oldValue = Check();
             oldValue = IoToRelay(oldValue);
@@ -110,6 +114,8 @@ namespace RelayPort
                 oldValue = RelayToIO(oldValue);
                 _i2c.WriteAddressByte(RELAY4_OUTPORT_REG_ADD, oldValue);
             }
+            responseModel.Success = true;
+            return responseModel;
         }
 
         /// <summary>
@@ -137,12 +143,14 @@ namespace RelayPort
         /// Sets all the relays to a specific value
         /// </summary>
         /// <param name="value"></param>
-        public void SetAll(byte value)
+        public ResponseModel SetAll(byte value)
         {
-            SetRelay(1, value);
-            SetRelay(2, value);
-            SetRelay(3, value);
-            SetRelay(4, value);
+            List<ResponseModel> responses = new List<ResponseModel>();
+            responses.Add(SetRelay(1, value));
+            responses.Add(SetRelay(2, value));
+            responses.Add(SetRelay(3, value));
+            responses.Add(SetRelay(4, value));
+            return new ResponseModel { Success = responses.All(a => a.Success), Message = string.Join(", ", responses.Select(b => b.Message))};
         }
     }
 }

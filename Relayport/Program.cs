@@ -6,7 +6,6 @@ using System.Device.Pwm.Drivers;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Iot.Device.Ssd13xx.Commands.Ssd1306Commands;
 using Unosquare.RaspberryIO;
 using Unosquare.WiringPi;
 
@@ -14,8 +13,9 @@ namespace RelayPort
 {
     class Program
     {
-        static SoftwarePwmChannel servo;
-        static FourRelay fourRelay;
+        static SoftwarePwmChannel _servo;
+        static FourRelayBoard _fourRelayBoard;
+        
         static async Task Main(string[] args)
         {
             Console.WriteLine("Loading settings");
@@ -28,22 +28,22 @@ namespace RelayPort
 
             Console.WriteLine("Initialising board");
             Pi.Init<BootstrapWiringPi>();
-            servo = new SoftwarePwmChannel(18, 400, 0.5, true);
-            servo.Start();
+            _servo = new SoftwarePwmChannel(18, 400, 0.5, true);
+            _servo.Start();
 
             Console.WriteLine("Setting up IoT Hub");
-            var _deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
-            await _deviceClient.SetMethodHandlerAsync("ControlAction", BoardAction, null);
+            var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
+            await deviceClient.SetMethodHandlerAsync("ControlAction", BoardAction, null);
             Console.WriteLine("Setting up board");
             //using I2cDevice i2cDevice = I2cDevice.Create(new I2cConnectionSettings(1, 0x20));
             //using Mcp23008 serialDriver = new Mcp23008(i2cDevice);
             try
             {
                 Console.WriteLine("Starting relay");
-                fourRelay = new FourRelay(0);
+                _fourRelayBoard = new FourRelayBoard(0);
                 for (int i = 0; i < 30; i++)
                 {
-                    Console.WriteLine($"Values of Relays are 1:{fourRelay.Get(1)} 2:{fourRelay.Get(2)} 3:{fourRelay.Get(3)} 4:{fourRelay.Get(4)}");
+                    Console.WriteLine($"Values of Relays are 1:{_fourRelayBoard.Get(1)} 2:{_fourRelayBoard.Get(2)} 3:{_fourRelayBoard.Get(3)} 4:{_fourRelayBoard.Get(4)}");
                     await Task.Delay(5000);
                 }
             }
@@ -69,8 +69,8 @@ namespace RelayPort
                 {
                     case "Servo":
                         ConsoleHelper.WriteGreenMessage($"Setting servo to value {controlAction.Value}");
-                        if (controlAction.Value >= 0 && controlAction.Value <=1) {
-                            servo.DutyCycle = controlAction.Value;
+                        if (controlAction.Value is >= 0 and <= 1) {
+                            _servo.DutyCycle = controlAction.Value;
                         } else
                         {
                             status = 400;
@@ -82,10 +82,18 @@ namespace RelayPort
                         if (relay == -1)
                         {
                             ConsoleHelper.WriteGreenMessage($"Setting all relays to value {controlAction.Value}");
-                            fourRelay.SetAll((byte) controlAction.Value);
-                        } else if (relay > 0 && relay < 5) {
+                            var relayResponse = _fourRelayBoard.SetAll((byte) controlAction.Value);
+                            if (!relayResponse.Success)
+                            {
+                                ConsoleHelper.WriteRedMessage(relayResponse.Message);
+                            }
+                        } else if (relay is > 0 and < 5) {
                             ConsoleHelper.WriteGreenMessage($"Setting relay {controlAction.Number} to value {controlAction.Value}");
-                            fourRelay.SetRelay((byte) relay, (byte) controlAction.Value);
+                            var relayResponse = _fourRelayBoard.SetRelay((byte) relay, (byte) controlAction.Value);
+                            if (!relayResponse.Success)
+                            {
+                                ConsoleHelper.WriteRedMessage(relayResponse.Message);
+                            }
                         } else
                         {
                             status = 400;
@@ -103,11 +111,11 @@ namespace RelayPort
                 string result = "{\"result\":\"Executed direct method: " + methodRequest.Name + "\",\"message\":\"" + message +"\"}";
                 return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), status));
             }
-            catch
+            catch (Exception exception)
             {
                 // Acknowledge the direct method call with a 400 error message.
-                string result = "{\"result\":\"Invalid parameter\"}";
-                ConsoleHelper.WriteRedMessage("Direct method failed: " + result);
+                string result = "{\"result\":\"Exception: " + exception.Message + "\"}";
+                ConsoleHelper.WriteRedMessage("Direct method failed: " + exception.Message);
                 return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 400));
             }
 

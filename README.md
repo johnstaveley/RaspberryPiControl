@@ -1,7 +1,6 @@
 # RaspberryPiControl
 
-This project is to control a 4 relay header board on a Raspberry Pi.
-This involved porting some python code to C#.
+This project is to control a 4 relay header board on a Raspberry Pi from a remote web page.
 
 ## Setup
 
@@ -43,3 +42,4 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo chown root.gpio /dev/gpiomem
 sudo chmod g+rw /dev/gpiomem
+
