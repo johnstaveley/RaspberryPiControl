@@ -19,6 +19,7 @@ namespace RelayPort
         static SoftwarePwmChannel _servo1;
         static SoftwarePwmChannel _servo2;
         static FourRelayBoard _fourRelayBoard;
+        static Lcd1602 _lcd;
 
         static async Task Main(string[] args)
         {
@@ -41,11 +42,11 @@ namespace RelayPort
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
             await deviceClient.SetMethodHandlerAsync("ControlAction", BoardAction, null);
             Console.WriteLine("Setting up board");
-            Lcd1602 lcd = new Lcd1602();
-            lcd.Init();
-            lcd.Clear();
-            lcd.Write(0, 0, "Hello");
-            lcd.Write(0, 1, "     World!");
+            _lcd = new Lcd1602();
+            _lcd.Init();
+            _lcd.Clear();
+            _lcd.Write(0, 0, "Pi Control");
+            _lcd.Write(0, 1, "Started");
             try
             {
                 Console.WriteLine("Starting Raspberry Pi control, send messages via IoT Explorer to set values");
@@ -77,6 +78,21 @@ namespace RelayPort
                 string message = "";
                 switch (controlAction.Method)
                 {
+                    case "SetText":
+                        if (controlAction.Number == 0) controlAction.Number = 1;
+                        if (!(controlAction.Number is 1 or 2))
+                        {
+                            status = 400;
+                            message = "SetText Number must be 1 or 2 to indicate either the first or second line of the display";
+                        } else
+                        {
+                            var xCoordinate = (int) controlAction.Value;
+                            var displayMessage = controlAction.Message
+                                .PadLeft(controlAction.Message.Length + xCoordinate, ' ')
+                                .PadRight(20 - controlAction.Message.Length - xCoordinate, ' ');
+                            _lcd.Write(0, (int) controlAction.Number - 1, displayMessage);
+                        }
+                        break;
                     case "SetServo":
                         ConsoleHelper.WriteGreenMessage($"Setting servo to value {controlAction.Value}");
                         if (!(controlAction.Value is >= 0 and <= 1))

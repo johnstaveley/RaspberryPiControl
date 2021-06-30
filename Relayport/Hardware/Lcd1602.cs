@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿// Most of the code is borrowed from here: https://www.codeproject.com/Articles/1274259/The-Year-of-IoT-Hooking-up-a-2-line-LCD-Display
+using System.Text;
 using System.Threading;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Abstractions;
@@ -79,13 +80,19 @@ namespace RelayPort.Hardware
             SendCommand(0x01); //clear Screen
         }
 
-        public void Write(int x, int y, string str)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x">The x coordinate to write the message at</param>
+        /// <param name="y">The y coordinate to write the message at</param>
+        /// <param name="message">The text to write to the screen</param>
+        public void Write(int x, int y, string message)
         {
             // Move cursor
             int addr = 0x80 + 0x40 * y + x;
             SendCommand(addr);
 
-            byte[] charData = Encoding.ASCII.GetBytes(str);
+            byte[] charData = Encoding.ASCII.GetBytes(message);
 
             foreach (byte b in charData)
             {
