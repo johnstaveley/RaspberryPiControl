@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <AssemblyName>RelayPort</AssemblyName>
+    <AssemblyName>Control</AssemblyName>
     <RootNamespace>RelayPort</RootNamespace>
     <StartupObject>RelayPort.Program</StartupObject>
     <UserSecretsId>c1bf6fda-529f-43c5-ab88-d512c4d213fa</UserSecretsId>

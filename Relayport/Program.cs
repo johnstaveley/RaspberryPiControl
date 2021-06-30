@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RelayPort.Hardware;
 using Unosquare.RaspberryIO;
 using Unosquare.WiringPi;
 
@@ -40,8 +41,11 @@ namespace RelayPort
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
             await deviceClient.SetMethodHandlerAsync("ControlAction", BoardAction, null);
             Console.WriteLine("Setting up board");
-            //using I2cDevice i2cDevice = I2cDevice.Create(new I2cConnectionSettings(1, 0x20));
-            //using Mcp23008 serialDriver = new Mcp23008(i2cDevice);
+            Lcd1602 lcd = new Lcd1602();
+            lcd.Init();
+            lcd.Clear();
+            lcd.Write(0, 0, "Hello");
+            lcd.Write(0, 1, "     World!");
             try
             {
                 Console.WriteLine("Starting Raspberry Pi control, send messages via IoT Explorer to set values");
@@ -84,6 +88,10 @@ namespace RelayPort
                         {
                             switch (controlAction.Number)
                             {
+                                case -1:
+                                    _servo1.DutyCycle = controlAction.Value;
+                                    _servo2.DutyCycle = controlAction.Value;
+                                    break;
                                 case 1:
                                     _servo1.DutyCycle = controlAction.Value;
                                     break;

@@ -2,6 +2,7 @@
 //   or here: https://shieldslist.com/raspberry-pi-shield/4-relay-heavy-duty-stackable-card-for-raspberry-pi/
 // Converted from python code here: https://github.com/SequentMicrosystems/4relay-rpi/blob/master/python/4relay/lib4relay/__init__.py
 // Instruction manual for the hardware is here: https://cdn.shopify.com/s/files/1/0176/3274/files/4-RELAY-UsersGuide.pdf?v=1596363564
+
 using RelayPort.Model;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Linq;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Abstractions;
 
-namespace RelayPort
+namespace RelayPort.Hardware
 {
     public class FourRelayBoard
     {
