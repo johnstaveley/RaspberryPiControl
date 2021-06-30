@@ -15,9 +15,10 @@ namespace RelayPort
 {
     class Program
     {
-        static SoftwarePwmChannel _servo;
+        static SoftwarePwmChannel _servo1;
+        static SoftwarePwmChannel _servo2;
         static FourRelayBoard _fourRelayBoard;
-        
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("Loading settings");
@@ -30,8 +31,10 @@ namespace RelayPort
 
             Console.WriteLine("Initialising board");
             Pi.Init<BootstrapWiringPi>();
-            _servo = new SoftwarePwmChannel(18, 400, 0.5, true);
-            _servo.Start();
+            _servo1 = new SoftwarePwmChannel(18, 400, 0.5, true);
+            _servo1.Start();
+            _servo2 = new SoftwarePwmChannel(13, 400, 0.5, true);
+            _servo2.Start();
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
@@ -41,11 +44,12 @@ namespace RelayPort
             //using Mcp23008 serialDriver = new Mcp23008(i2cDevice);
             try
             {
-                Console.WriteLine("Starting relay");
+                Console.WriteLine("Starting Raspberry Pi control, send messages via IoT Explorer to set values");
                 _fourRelayBoard = new FourRelayBoard(0);
-                for (int i = 0; i < 30; i++)
+                for (int i = 0; i < 3000; i++)
                 {
-                    Console.WriteLine($"Values of Relays are 1:{_fourRelayBoard.Get(1)} 2:{_fourRelayBoard.Get(2)} 3:{_fourRelayBoard.Get(3)} 4:{_fourRelayBoard.Get(4)}");
+                    //Console.WriteLine($"Values of Relays are 1:{_fourRelayBoard.Get(1)} 2:{_fourRelayBoard.Get(2)} 3:{_fourRelayBoard.Get(3)} 4:{_fourRelayBoard.Get(4)}");
+                    Console.Write(".");
                     await Task.Delay(5000);
                 }
             }
@@ -63,63 +67,83 @@ namespace RelayPort
             try
             {
                 var data = methodRequest.DataAsJson;
-                ConsoleHelper.WriteGreenMessage($"Received data: {data} from calling method {methodRequest}");
+                ConsoleHelper.WriteGreenMessage($"Received: {data} from direct method {methodRequest.Name}");
                 var controlAction = JsonConvert.DeserializeObject<ControlAction>(data);
                 int status = 200;
                 string message = "";
                 switch (controlAction.Method)
                 {
-                    case "Servo":
+                    case "SetServo":
                         ConsoleHelper.WriteGreenMessage($"Setting servo to value {controlAction.Value}");
-                        if (controlAction.Value is >= 0 and <= 1) {
-                            _servo.DutyCycle = controlAction.Value;
-                        } else
+                        if (!(controlAction.Value is >= 0 and <= 1))
                         {
                             status = 400;
-                            message = $"Servo value of {controlAction.Value} is illegal but be between 0 and 1 inclusive";
+                            message = $"Servo value of {controlAction.Value} is illegal, must be between 0 and 1 inclusive";
+                        }
+                        else
+                        {
+                            switch (controlAction.Number)
+                            {
+                                case 1:
+                                    _servo1.DutyCycle = controlAction.Value;
+                                    break;
+                                case 2:
+                                    _servo2.DutyCycle = controlAction.Value;
+                                    break;
+                                default:
+                                    status = 400;
+                                    message = $"Servo {controlAction.Number} is illegal, must be either 1 or 2";
+                                    break;
+                            }
                         }
                         break;
                     case "GetRelay":
-                        var getRelayNumber = (int) controlAction.Number;
+                        var getRelayNumber = (int)controlAction.Number;
                         if (getRelayNumber == -1)
                         {
                             ConsoleHelper.WriteGreenMessage($"Getting value of all relays");
                             List<Tuple<int, byte>> responses = new List<Tuple<int, byte>>();
                             foreach (var relayNumber in Enumerable.Range(1, 4))
                             {
-                                responses.Add(new Tuple<int, byte>(relayNumber, _fourRelayBoard.Get((byte) relayNumber)));
+                                responses.Add(new Tuple<int, byte>(relayNumber, _fourRelayBoard.Get((byte)relayNumber)));
                             }
                             status = 200;
                             message = string.Join(", ", responses.Select(a => $"Relay {a.Item1} has value {a.Item2}"));
-                        } else if (getRelayNumber is > 0 and < 5) {
+                        }
+                        else if (getRelayNumber is > 0 and < 5)
+                        {
                             ConsoleHelper.WriteGreenMessage($"Getting relay {controlAction.Number}");
-                            var relayResponse = _fourRelayBoard.Get((byte) getRelayNumber);
+                            var relayResponse = _fourRelayBoard.Get((byte)getRelayNumber);
                             status = 200;
-                            message = $"Relay {getRelayNumber} value is {relayResponse}";
-                        } else
+                            message = $"GetRelay - Relay {getRelayNumber} value is {relayResponse}";
+                        }
+                        else
                         {
                             status = 400;
                             message = $"GetRelay - Relay address {getRelayNumber} unknown. Must be 1 to 4 or -1 for all relays";
                         }
                         break;
                     case "SetRelay":
-                        var relay = (int) controlAction.Number;
+                        var relay = (int)controlAction.Number;
                         if (relay == -1)
                         {
                             ConsoleHelper.WriteGreenMessage($"Setting all relays to value {controlAction.Value}");
-                            var relayResponse = _fourRelayBoard.SetAll((byte) controlAction.Value);
-                            if (!relayResponse.Success)
-                            {
-                                ConsoleHelper.WriteRedMessage(relayResponse.Message);
-                            } 
-                        } else if (relay is > 0 and < 5) {
-                            ConsoleHelper.WriteGreenMessage($"Setting relay {controlAction.Number} to value {controlAction.Value}");
-                            var relayResponse = _fourRelayBoard.SetRelay((byte) relay, (byte) controlAction.Value);
+                            var relayResponse = _fourRelayBoard.SetAll((byte)controlAction.Value);
                             if (!relayResponse.Success)
                             {
                                 ConsoleHelper.WriteRedMessage(relayResponse.Message);
                             }
-                        } else
+                        }
+                        else if (relay is > 0 and < 5)
+                        {
+                            ConsoleHelper.WriteGreenMessage($"Setting relay {controlAction.Number} to value {controlAction.Value}");
+                            var relayResponse = _fourRelayBoard.SetRelay((byte)relay, (byte)controlAction.Value);
+                            if (!relayResponse.Success)
+                            {
+                                ConsoleHelper.WriteRedMessage(relayResponse.Message);
+                            }
+                        }
+                        else
                         {
                             status = 400;
                             message = $"SetRelay - Relay address {relay} unknown. Must be 1 to 4 or -1 for all relays";
@@ -133,7 +157,7 @@ namespace RelayPort
                 }
 
                 // Acknowledge the direct method call with a 200 success message.
-                string result = "{\"result\":\"Executed direct method: " + methodRequest.Name + "\",\"message\":\"" + message +"\"}";
+                string result = "{\"result\":\"Executed direct method: " + methodRequest.Name + "\",\"message\":\"" + message + "\"}";
                 return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), status));
             }
             catch (Exception exception)

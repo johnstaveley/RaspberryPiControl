@@ -2,11 +2,10 @@
 //   or here: https://shieldslist.com/raspberry-pi-shield/4-relay-heavy-duty-stackable-card-for-raspberry-pi/
 // Converted from python code here: https://github.com/SequentMicrosystems/4relay-rpi/blob/master/python/4relay/lib4relay/__init__.py
 // Instruction manual for the hardware is here: https://cdn.shopify.com/s/files/1/0176/3274/files/4-RELAY-UsersGuide.pdf?v=1596363564
-using System.Collections.Generic;
-using System;
-using System.Linq;
-using Microsoft.Azure.Amqp;
 using RelayPort.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Abstractions;
 
@@ -14,7 +13,7 @@ namespace RelayPort
 {
     public class FourRelayBoard
     {
-        private II2CDevice _i2c;
+        private readonly II2CDevice _i2c;
 
         /// <summary>
         /// Creates a new instance of the class to control the 4 relay header board
@@ -145,11 +144,10 @@ namespace RelayPort
         /// <param name="value"></param>
         public ResponseModel SetAll(byte value)
         {
-            List<ResponseModel> responses = new List<ResponseModel>();
-            responses.Add(SetRelay(1, value));
-            responses.Add(SetRelay(2, value));
-            responses.Add(SetRelay(3, value));
-            responses.Add(SetRelay(4, value));
+            List<ResponseModel> responses = new List<ResponseModel>
+            {
+                SetRelay(1, value), SetRelay(2, value), SetRelay(3, value), SetRelay(4, value)
+            };
             return new ResponseModel { Success = responses.All(a => a.Success), Message = string.Join(", ", responses.Select(b => b.Message))};
         }
     }
