@@ -1,14 +1,15 @@
 ﻿using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
+using RelayPort.Hardware;
 using RelayPort.Model;
 using System;
 using System.Collections.Generic;
+using System.Device.Gpio;
 using System.Device.Pwm.Drivers;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RelayPort.Hardware;
 using Unosquare.RaspberryIO;
 using Unosquare.WiringPi;
 
@@ -20,6 +21,11 @@ namespace RelayPort
         static SoftwarePwmChannel _servo2;
         static FourRelayBoard _fourRelayBoard;
         static Lcd1602 _lcd;
+        static System.Device.Gpio.GpioController _controller;
+        static int _inputPin;
+        static int _outputPin1;
+        static int _outputPin2;
+        static int _outputPin3;
 
         static async Task Main(string[] args)
         {
@@ -33,10 +39,23 @@ namespace RelayPort
 
             Console.WriteLine("Initialising board");
             Pi.Init<BootstrapWiringPi>();
-            _servo1 = new SoftwarePwmChannel(18, 400, 0.5, true);
+            _servo1 = new SoftwarePwmChannel(18, 400, 0.1, true);
             _servo1.Start();
-            _servo2 = new SoftwarePwmChannel(13, 400, 0.5, true);
+            _servo2 = new SoftwarePwmChannel(13, 400, 0.1, true);
             _servo2.Start();
+            
+            _outputPin1 = 17; // board pin 11
+            _outputPin2 = 27; // board pin 13
+            _outputPin3 = 16; // board pin 36
+            _inputPin = 22; // board pin 15
+            _controller = new();
+            _controller.OpenPin(_outputPin1, PinMode.Output);
+            _controller.OpenPin(_outputPin2, PinMode.Output);
+            _controller.OpenPin(_outputPin3, PinMode.Output);
+            _controller.OpenPin(_inputPin, PinMode.Input);
+            _controller.Write(_outputPin1, PinValue.High);
+            _controller.Write(_outputPin2, PinValue.High);
+            _controller.Write(_outputPin3, PinValue.High);
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
@@ -78,6 +97,37 @@ namespace RelayPort
                 string message = "";
                 switch (controlAction.Method)
                 {
+                    case "GetInput":
+                        var inputResult = _controller.Read(_inputPin);
+                        status = 200;
+                        message = $"GetInput: Value is {inputResult}";
+                        break;
+                    case "SetOutput":
+                        if (!(controlAction.Number is 1 or 2 or 3))
+                        {
+                            status = 400;
+                            message = "SetOutput Number must be 1 to 3 to indicate which output to target";
+                        }
+                        if (!(controlAction.Value is 0 or 1))
+                        {
+                            status = 400;
+                            message = $"SetOutput value of {controlAction.Value} is illegal, must be either 0 or 1";
+                        }
+                        var outputNumber = (int) controlAction.Number;
+                        var outputValue = (int) controlAction.Value;
+                        switch (outputNumber)
+                        {
+                            case 1:
+                                _controller.Write(_outputPin1, outputValue);
+                                break;
+                            case 2:
+                                _controller.Write(_outputPin2, outputValue);
+                                break;
+                            case 3:
+                                _controller.Write(_outputPin3, outputValue);
+                                break;
+                        }
+                        break;
                     case "SetText":
                         if (controlAction.Number == 0) controlAction.Number = 1;
                         if (!(controlAction.Number is 1 or 2))
