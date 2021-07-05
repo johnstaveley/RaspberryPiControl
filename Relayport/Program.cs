@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
 using RelayPort.Hardware;
 using RelayPort.Model;
@@ -21,6 +22,7 @@ namespace RelayPort
         static SoftwarePwmChannel _servo2;
         static FourRelayBoard _fourRelayBoard;
         static Lcd1602 _lcd;
+        static bool ledState1;
         static System.Device.Gpio.GpioController _controller;
         static int _inputPin;
         static int _outputPin1;
@@ -53,13 +55,17 @@ namespace RelayPort
             _controller.OpenPin(_outputPin2, PinMode.Output);
             _controller.OpenPin(_outputPin3, PinMode.Output);
             _controller.OpenPin(_inputPin, PinMode.Input);
-            _controller.Write(_outputPin1, PinValue.High);
-            _controller.Write(_outputPin2, PinValue.High);
-            _controller.Write(_outputPin3, PinValue.High);
+            _controller.Write(_outputPin1, PinValue.Low);
+            _controller.Write(_outputPin2, PinValue.Low);
+            _controller.Write(_outputPin3, PinValue.Low);
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
             await deviceClient.SetMethodHandlerAsync("ControlAction", BoardAction, null);
+            var twin = await deviceClient.GetTwinAsync();
+            Console.WriteLine("Successfully got twin for the device", ConsoleColor.Green);
+            //if (twin != null) Console.WriteLine(twin.ToString(), ConsoleColor.Green);
+            await StartListeningForDesiredPropertyChanges(deviceClient);
             Console.WriteLine("Setting up board");
             _lcd = new Lcd1602();
             _lcd.Init();
@@ -244,5 +250,54 @@ namespace RelayPort
 
         }
 
+        private static async Task DesiredPropertyUpdateCallback(TwinCollection desiredProperties, object userContext)
+        {
+            try
+            {
+                ConsoleHelper.WriteGreenMessage("Received desired property update:");
+                ConsoleHelper.WriteGreenMessage(desiredProperties.ToJson(Formatting.Indented));
+                ApplyDesiredProperties(desiredProperties);
+
+            }
+            catch (Exception ex)
+            {
+                ConsoleHelper.WriteRedMessage($"* ERROR * {ex.Message}");
+            }
+        }
+
+        private static async Task StartListeningForDesiredPropertyChanges(DeviceClient deviceClient)
+        {
+            try
+            {
+                await deviceClient.SetDesiredPropertyUpdateCallbackAsync(callback: DesiredPropertyUpdateCallback, userContext: deviceClient);
+                Console.WriteLine("Now listening for desired property updates");
+            }
+            catch (Exception ex)
+            {
+                ConsoleHelper.WriteRedMessage($"* ERROR * {ex.Message}");
+            }
+        }
+
+        private static void ApplyDesiredProperties(TwinCollection desiredProperties)
+        {
+            try
+            {
+                if (desiredProperties == null)
+                {
+                    return;
+                }
+                if (desiredProperties.Contains("ledState") && desiredProperties["ledState"] != null)
+                {
+                    var propertyValue = (string) desiredProperties["ledState"].ToString();
+                    ledState1 = int.Parse(propertyValue) == 1;
+                    Console.WriteLine($"Setting LED1 to {ledState1}");
+                    _controller.Write(_outputPin1, ledState1 ? PinValue.High : PinValue.Low);
+                }
+            }
+            catch (Exception ex)
+            {
+                ConsoleHelper.WriteRedMessage($"* ERROR * {ex.Message}");
+            }
+        }
     }
 }

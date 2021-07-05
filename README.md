@@ -49,6 +49,16 @@ this writes a message to the second row (Number) and third character location of
 
 if there is a mistake then a bad request will be returned to you
 
+Setting via desvice twin
+
+You can set the state of LED 1 by changing the desired property:
+
+{
+	"properties": {
+		"desired": {
+			"ledState": 0,
+...
+
 ## Tech notes
 
 Publish as single file does not seem to work, you get a file not found error
