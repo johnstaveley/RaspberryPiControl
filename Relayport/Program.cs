@@ -10,6 +10,7 @@ using System.Device.Pwm.Drivers;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Unosquare.RaspberryIO;
 using Unosquare.WiringPi;
@@ -41,10 +42,14 @@ namespace RelayPort
 
             Console.WriteLine("Initialising board");
             Pi.Init<BootstrapWiringPi>();
-            _servo1 = new SoftwarePwmChannel(18, 400, 0.1, true);
+            _servo1 = new SoftwarePwmChannel(18, 400, 0.9, true);
             _servo1.Start();
-            _servo2 = new SoftwarePwmChannel(13, 400, 0.1, true);
+            _servo2 = new SoftwarePwmChannel(13, 400, 0.9, true);
             _servo2.Start();
+            // Allow servos to move to new position and then stop them. This removes jitter
+            Thread.Sleep(1000);
+            _servo1.DutyCycle = 0;
+            _servo2.DutyCycle = 0;
             
             _outputPin1 = 17; // board pin 11
             _outputPin2 = 27; // board pin 13
@@ -175,6 +180,10 @@ namespace RelayPort
                                     message = $"Servo {controlAction.Number} is illegal, must be either 1 or 2";
                                     break;
                             }
+                            // Give the servos time to get to their new position. and then stop them, this stops jitter
+                            Thread.Sleep(1000);
+                            _servo1.DutyCycle = 0;
+                            _servo2.DutyCycle = 0;
                         }
                         break;
                     case "GetRelay":
