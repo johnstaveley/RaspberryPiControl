@@ -1,4 +1,4 @@
-﻿namespace RelayPort.Model
+﻿namespace Control.Model
 {
     public class ResponseModel
     {

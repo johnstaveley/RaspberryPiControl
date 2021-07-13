@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RelayPort
+namespace Control
 {
     internal static class ConsoleHelper
     {

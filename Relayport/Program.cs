@@ -1,8 +1,8 @@
-﻿using Microsoft.Azure.Devices.Client;
+﻿using Control.Hardware;
+using Control.Model;
+using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
-using RelayPort.Hardware;
-using RelayPort.Model;
 using System;
 using System.Collections.Generic;
 using System.Device.Gpio;
@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using Unosquare.RaspberryIO;
 using Unosquare.WiringPi;
 
-namespace RelayPort
+namespace Control
 {
     class Program
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
 
-namespace RelayPort.Model
+namespace Control.Model
 {
     public class AppConfiguration
     {

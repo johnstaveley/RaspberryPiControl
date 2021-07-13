@@ -4,7 +4,7 @@ using System.Threading;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Abstractions;
 
-namespace RelayPort.Hardware
+namespace Control.Hardware
 {
 
     public class Lcd1602
