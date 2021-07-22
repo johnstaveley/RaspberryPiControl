@@ -22,6 +22,7 @@ namespace Control
         static SoftwarePwmChannel _servo1;
         static SoftwarePwmChannel _servo2;
         static FourRelayBoard _fourRelayBoard;
+        static PwmDriver _pwmDriver;
         static Lcd1602 _lcd;
         static bool ledState1;
         static System.Device.Gpio.GpioController _controller;
@@ -63,6 +64,9 @@ namespace Control
             _controller.Write(_outputPin1, PinValue.Low);
             _controller.Write(_outputPin2, PinValue.Low);
             _controller.Write(_outputPin3, PinValue.Low);
+
+            //Console.WriteLine("Setting up Pwm Driver");
+            //_pwmDriver = new PwmDriver();
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
