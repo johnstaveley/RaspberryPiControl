@@ -20,7 +20,6 @@ namespace Control
     class Program
     {
         static SoftwarePwmChannel _servo1;
-        static SoftwarePwmChannel _servo2;
         static FourRelayBoard _fourRelayBoard;
         static PwmDriver _pwmDriver;
         static Lcd1602 _lcd;
@@ -45,12 +44,9 @@ namespace Control
             Pi.Init<BootstrapWiringPi>();
             _servo1 = new SoftwarePwmChannel(18, 400, 0.9, true);
             _servo1.Start();
-            _servo2 = new SoftwarePwmChannel(13, 400, 0.9, true);
-            _servo2.Start();
             // Allow servos to move to new position and then stop them. This removes jitter
             Thread.Sleep(1000);
             _servo1.DutyCycle = 0;
-            _servo2.DutyCycle = 0;
             
             _outputPin1 = 17; // board pin 11
             _outputPin2 = 27; // board pin 13
@@ -65,8 +61,15 @@ namespace Control
             _controller.Write(_outputPin2, PinValue.Low);
             _controller.Write(_outputPin3, PinValue.Low);
 
-            //Console.WriteLine("Setting up Pwm Driver");
-            //_pwmDriver = new PwmDriver();
+            Console.WriteLine("Setting up Pwm Driver");
+            _pwmDriver = new PwmDriver();
+            _pwmDriver.ResetDevice();
+            _pwmDriver.IsDebug = true;
+            Thread.Sleep(1000);
+            //Console.WriteLine("Pwm rate");
+            //_pwmDriver.SetPwmUpdateRate(400);
+            Console.WriteLine("Set all true");
+            _pwmDriver.SetAllCall(true);
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
@@ -158,6 +161,32 @@ namespace Control
                             _lcd.Write(0, (int) controlAction.Number - 1, displayMessage);
                         }
                         break;
+                    case "SetPwm":
+                        if (!(controlAction.Value is >= 0 and <= 1))
+                        {
+                            status = 400;
+                            message = $"Pwm value of {controlAction.Value} is illegal, must be between 0 and 1 inclusive";
+                        }
+                        else
+                        {
+                            var pwmMessage = controlAction.Number == -1 ? "All" : controlAction.Number.ToString();
+                            ConsoleHelper.WriteGreenMessage($"Setting pwm {pwmMessage} to value {controlAction.Value}");
+                            switch (controlAction.Number)
+                            {
+                                case -1:
+                                    // All
+                                    _pwmDriver.SetDutyCycle(PwmDriver.PwmChannel.C0, controlAction.Value * 100);
+                                    Thread.Sleep(1000);
+                                    var value1 = _pwmDriver.GetPwmOn(PwmDriver.PwmChannel.C0);
+                                    ConsoleHelper.WriteColorMessage($"Pwm 0 value:{value1}", ConsoleColor.Yellow);
+                                    break;
+                                default:
+                                    status = 400;
+                                    message = $"Pwm {controlAction.Number} is illegal, must be either 1 or 2";
+                                    break;
+                            }
+                        }
+                        break;
                     case "SetServo":
                         ConsoleHelper.WriteGreenMessage($"Setting servo to value {controlAction.Value}");
                         if (!(controlAction.Value is >= 0 and <= 1))
@@ -170,14 +199,11 @@ namespace Control
                             switch (controlAction.Number)
                             {
                                 case -1:
+                                    // All
                                     _servo1.DutyCycle = controlAction.Value;
-                                    _servo2.DutyCycle = controlAction.Value;
                                     break;
                                 case 1:
                                     _servo1.DutyCycle = controlAction.Value;
-                                    break;
-                                case 2:
-                                    _servo2.DutyCycle = controlAction.Value;
                                     break;
                                 default:
                                     status = 400;
@@ -187,7 +213,6 @@ namespace Control
                             // Give the servos time to get to their new position. and then stop them, this stops jitter
                             Thread.Sleep(1000);
                             _servo1.DutyCycle = 0;
-                            _servo2.DutyCycle = 0;
                         }
                         break;
                     case "GetRelay":

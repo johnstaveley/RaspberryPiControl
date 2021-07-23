@@ -50,7 +50,7 @@ namespace Control.Hardware
             4
         };
 
-        public byte RelayToIO(byte relay)
+        public byte RelayToIo(byte relay)
         {
             byte value = (byte) 0;
             foreach (var index in Enumerable.Range(0, 4))
@@ -105,13 +105,13 @@ namespace Control.Hardware
             if (value == 0)
             {
                 oldValue = (byte) (oldValue & ~(1 << relay - 1));
-                oldValue = RelayToIO(oldValue);
+                oldValue = RelayToIo(oldValue);
                 _i2c.WriteAddressByte(RELAY4_OUTPORT_REG_ADD, oldValue);
             }
             else
             {
                 oldValue = (byte) (oldValue | 1 << relay - 1);
-                oldValue = RelayToIO(oldValue);
+                oldValue = RelayToIo(oldValue);
                 _i2c.WriteAddressByte(RELAY4_OUTPORT_REG_ADD, oldValue);
             }
             responseModel.Success = true;

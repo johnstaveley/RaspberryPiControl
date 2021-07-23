@@ -28,7 +28,7 @@ namespace Control.Hardware
         /// <summary>
         /// The I2C device instance to be controlled. 
         /// </summary>
-        private II2CDevice _i2C;
+        private readonly II2CDevice _i2C;
 
         /// <summary>
         /// The default 7-bit I2C bus address of the device. 
@@ -39,6 +39,8 @@ namespace Control.Hardware
         /// The number of channels supported by the expansion module.
         /// </summary>
         public const Int32 ChannelCount = 16;
+
+        public bool IsDebug {get; set;}
 
         #endregion
 
@@ -278,14 +280,14 @@ namespace Control.Hardware
             }
 
             // Calculate the "prescale register" value required to accomplish the specified target frequency.
-            decimal preScale = 25000000; // 25 MHz.
+            double preScale = 25000000f; // 25 MHz.
             preScale /= 4096; // 12 bit.
             preScale /= frequency;
             preScale -= 1;
-            preScale = Math.Round(preScale, MidpointRounding.AwayFromZero);
+            preScale = (byte)Math.Floor(preScale + 0.5f);
 
             // Debug output.
-            //System.Diagnostics.Debug.WriteLine("Setting PWM frequency to {0} Hz using prescale value {1}", frequency, PreScale);
+            if (IsDebug) Console.WriteLine("Setting PWM frequency to {0} Hz using prescale value {1}", frequency, preScale);
 
             // The PRE_SCALE register can only be set when the device is in sleep mode (oscillator is disabled).
             Sleep();
@@ -305,6 +307,8 @@ namespace Control.Hardware
         /// </summary>
         public void Sleep()
         {
+            if (IsDebug) Console.WriteLine("Going to sleep");
+
             // Get the current bit values in the device's MODE 1 control/config register so those bit values can be persisted while changing the target bit.
             byte registerValue = ReadRegister(Register.MODE1);
 
@@ -319,6 +323,7 @@ namespace Control.Hardware
         /// </summary>
         public void Wake()
         {
+            if (IsDebug) Console.WriteLine("Waking up");
             // Get the current bit values in the device's MODE 1 control/config register so those bit values can be persisted while changing the target bit.
             byte registerValue = ReadRegister(Register.MODE1);
 
@@ -341,6 +346,7 @@ namespace Control.Hardware
         /// </remarks>
         public void Restart()
         {
+            if (IsDebug) Console.WriteLine("Restarting");
             // Get the current bit values in the device's MODE 1 control/config register so those bit values can be persisted while changing the target bit.
             byte registerValue = ReadRegister(Register.MODE1);
 
@@ -353,9 +359,11 @@ namespace Control.Hardware
         /// </summary>
         public void ResetDevice()
         {
+            if (IsDebug) Console.WriteLine("Reset all");
             // Set default configuration to ensure a known state.
             SetFullOff(PwmChannel.ALL);
-            WriteRegister(Register.MODE1, (byte)Command.DEFAULT_CONFIG);
+            WriteRegister(Register.MODE1, (byte) Command.DEFAULT_CONFIG);
+            IsDebug = false;
         }
 
         #region " Methods (Public / Advanced Device Configuration) "
@@ -453,6 +461,8 @@ namespace Control.Hardware
             // For example: SetPwm(channel, 4096, 0) would set the "On" registers to 00010000 00000000 which would disable PWM for the channel and set it to fully/constant on.
             //              SetPwm(channel, 0, 4096) would have the same affect on the "Off" registers causing the channel to be fully/constant off.
 
+            if (IsDebug) Console.WriteLine($"Set Pwm Channel {channel} to {on} on and {off} off");
+
             // Set the on cycle for the specified channel register.
             WriteRegister(Register.LED0_ON_L + 4 * (int)channel, on & 0xFF); // Set the 8 least significant bits.  0000XXXXXXXX.
             WriteRegister(Register.LED0_ON_H + 4 * (int)channel, on >> 8); // Set the remaining 4 most significant bits.  XXXX00000000.
@@ -469,6 +479,7 @@ namespace Control.Hardware
         /// <returns>The On cycle value on a scale of 0 to 4095, or 4096 for constant on.</returns>
         public Int32 GetPwmOn(PwmChannel channel)
         {
+            if (IsDebug) Console.WriteLine($"Get degree of ON for Pwm {channel}");
             return (ReadRegister(Register.LED0_ON_H + 4 * (int)channel) << 8) + ReadRegister(Register.LED0_ON_L + 4 * (int)channel);
         }
 
@@ -479,6 +490,7 @@ namespace Control.Hardware
         /// <returns>The Off cycle value on a scale of 0 to 4095, or 4096 for constant off.</returns>
         public Int32 GetPwmOff(PwmChannel channel)
         {
+            if (IsDebug) Console.WriteLine($"Get degree of OFF for Pwm {channel}");
             return (ReadRegister(Register.LED0_OFF_H + 4 * (int)channel) << 8) + ReadRegister(Register.LED0_OFF_L + 4 * (int)channel);
         }
 
@@ -575,12 +587,8 @@ namespace Control.Hardware
         /// <param name="data">The data to write to the device.</param>
         private void WriteRegister(Register register, byte data)
         {
-
-            // Debug output.
-            //System.Diagnostics.Debug.WriteLine("WriteRegister: {0}, data = {1}.", register, ByteToBinaryString(data));
-
-            _i2C.Write(new[] { (byte)register, data });
-
+            if (IsDebug) Console.WriteLine("WriteRegister: {0}, data = {1}.", register, ByteToBinaryString(data));
+            _i2C.Write(new[] { (byte) register, data });
         }
 
         /// <summary>
@@ -591,20 +599,19 @@ namespace Control.Hardware
         private byte ReadRegister(Register register)
         {
             // Initialize the read/write buffers.
-            byte[] regAddrBuf = new byte[] { (byte)register }; // Device register address to write.          
+            byte[] regAddrBuf = new byte[] { (byte) register }; // Device register address to write.          
             byte[] readBuf = new byte[1]; // Read buffer to store results read from device.
 
             // Read from the device.
             // We call WriteRead(), first write the address of the device register to be targeted, then read back the data from the device.
             //_i2c.WriteRead(RegAddrBuf, ReadBuf);
             // TODO: Test this to see if it works, modified from above
-            _i2C.Write(regAddrBuf);
-            readBuf = _i2C.Read(1);
+            //_i2C.Write(regAddrBuf);
+            _i2C.Write((byte) register);
+            var result = _i2C.ReadAddressByte((int) register);
+            //byte result = readBuf[0];
 
-            byte result = readBuf[0];
-
-            // Debug output.
-            //System.Diagnostics.Debug.WriteLine("ReadRegister: {0}, result = {1}.", register, ByteToBinaryString(result));
+            if (IsDebug) Console.WriteLine("ReadRegister: {0}, result = {1}.", register, ByteToBinaryString(result));
 
             return result;
         }
