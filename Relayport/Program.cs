@@ -120,7 +120,7 @@ namespace Control
                         message = $"GetInput: Value is {inputResult}";
                         break;
                     case "SetOutput":
-                        if (!(controlAction.Number is 1 or 2 or 3))
+                        if (!(controlAction.Number is -1 or 1 or 2 or 3))
                         {
                             status = 400;
                             message = "SetOutput Number must be 1 to 3 to indicate which output to target";
@@ -130,10 +130,15 @@ namespace Control
                             status = 400;
                             message = $"SetOutput value of {controlAction.Value} is illegal, must be either 0 or 1";
                         }
-                        var outputNumber = (int)controlAction.Number;
-                        var outputValue = (int)controlAction.Value;
+                        var outputNumber = (int) controlAction.Number;
+                        var outputValue = (int) controlAction.Value;
                         switch (outputNumber)
                         {
+                            case -1:
+                                _controller.Write(_outputPin1, outputValue);
+                                _controller.Write(_outputPin2, outputValue);
+                                _controller.Write(_outputPin3, outputValue);
+                                break;
                             case 1:
                                 _controller.Write(_outputPin1, outputValue);
                                 break;

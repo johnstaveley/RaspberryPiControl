@@ -1,6 +1,10 @@
-# RaspberryPiControl
+# Raspberry Pi Control
 
-This project is to control a 4 relay header board on a Raspberry Pi from a remote web page.
+This project is to control various hardware on a Raspberry Pi from a remote web page.
+Hardware includes:
+* A 4 relay header board to control a lamp and solenoid
+* LCD Display
+* 16 PWM Devices including continuous and angular servos
 
 ## Setup
 
