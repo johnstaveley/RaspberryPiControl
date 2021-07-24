@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Abstractions;
@@ -34,11 +35,6 @@ namespace Control.Hardware
         /// The default 7-bit I2C bus address of the device. 
         /// </summary>
         private const byte DefaultI2CAddress = 0x40;
-
-        /// <summary>
-        /// The number of channels supported by the expansion module.
-        /// </summary>
-        public const Int32 ChannelCount = 16;
 
         public bool IsDebug {get; set;}
 
@@ -269,36 +265,39 @@ namespace Control.Hardware
         /// Data sheet: 7.3.5 PWM frequency PRE_SCALE.
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified frequency is out of the range supported by the integrated circuit.</exception>
-        public void SetPwmUpdateRate(Int32 frequency)
+        public double SetPwmUpdateRate(double frequency)
         {
-
             // The maximum PWM frequency is ~1526 Hz if the PRE_SCALE register is set to "0x03".
             // The minimum PWM frequency is ~24 Hz if the PRE_SCALE register is set to "0xFF".
             if (frequency < 24 || frequency > 1526)
             {
                 throw new ArgumentOutOfRangeException(nameof(frequency), frequency, "Value must be in the range of 24 to 1526.");
             }
+            frequency *= 0.9f;  // Correct for overshoot in the frequency setting 
 
             // Calculate the "prescale register" value required to accomplish the specified target frequency.
-            double preScale = 25000000f; // 25 MHz.
-            preScale /= 4096; // 12 bit.
-            preScale /= frequency;
-            preScale -= 1;
-            preScale = (byte)Math.Floor(preScale + 0.5f);
+            double preScaleValue = 25000000f; // 25 MHz.
+            preScaleValue /= 4096; // 12 bit.
+            preScaleValue /= frequency;
+            preScaleValue -= 1;
+            var preScale = (byte) Math.Floor(preScaleValue + 0.5f);
 
             // Debug output.
-            if (IsDebug) Console.WriteLine("Setting PWM frequency to {0} Hz using prescale value {1}", frequency, preScale);
+            if (IsDebug) Console.WriteLine($"Setting PWM frequency to {frequency} Hz using prescale value {preScale}");
 
             // The PRE_SCALE register can only be set when the device is in sleep mode (oscillator is disabled).
             Sleep();
 
             // Set the prescale value to change the frequency.
-            WriteRegister(Register.PRESCALE, (byte)Math.Floor(preScale));
+            WriteRegister(Register.PRESCALE, preScale);
 
             // Return to the normal operating mode.
             Wake();
-            Restart();
 
+            Thread.Sleep(1000);
+            //Restart();
+
+            return frequency;
         }
 
         /// <summary>
@@ -312,7 +311,7 @@ namespace Control.Hardware
             // Get the current bit values in the device's MODE 1 control/config register so those bit values can be persisted while changing the target bit.
             byte registerValue = ReadRegister(Register.MODE1);
 
-            WriteRegister(Register.MODE1, ((registerValue & (byte)Command.SLEEP_MASK) | (byte)Command.SLEEP)); // Go to sleep.
+            WriteRegister(Register.MODE1, ((registerValue & (byte)Command.SLEEP_MASK) | (byte) Command.SLEEP)); // Go to sleep.
 
             // The SLEEP bit must be logic 0 for at least 5 ms, before a logic 1 is written into the RESTART bit.
             Task.Delay(10).Wait();
@@ -559,9 +558,8 @@ namespace Control.Hardware
             if (dutyCycle > 0 && dutyCycle < 100)
             {
                 // Calculate and set the number of cycles required to match the specified duty cycle percentage.
-                int stopCycle = (int)Math.Round(4095 * dutyCycle / 100, MidpointRounding.AwayFromZero);
+                int stopCycle = (int) Math.Round(4095 * dutyCycle / 100, MidpointRounding.AwayFromZero);
                 SetPwm(channel, 0, stopCycle);
-                return;
             }
 
         }
@@ -588,7 +586,7 @@ namespace Control.Hardware
         private void WriteRegister(Register register, byte data)
         {
             if (IsDebug) Console.WriteLine("WriteRegister: {0}, data = {1}.", register, ByteToBinaryString(data));
-            _i2C.Write(new[] { (byte) register, data });
+            _i2C.WriteAddressByte((byte) register, data);
         }
 
         /// <summary>
@@ -598,21 +596,10 @@ namespace Control.Hardware
         /// <returns>The data read from the device.</returns>
         private byte ReadRegister(Register register)
         {
-            // Initialize the read/write buffers.
-            byte[] regAddrBuf = new byte[] { (byte) register }; // Device register address to write.          
-            byte[] readBuf = new byte[1]; // Read buffer to store results read from device.
+            if (IsDebug) Console.WriteLine($"Attempting ReadRegister: {register} @ {(byte) register}");
 
-            // Read from the device.
-            // We call WriteRead(), first write the address of the device register to be targeted, then read back the data from the device.
-            //_i2c.WriteRead(RegAddrBuf, ReadBuf);
-            // TODO: Test this to see if it works, modified from above
-            //_i2C.Write(regAddrBuf);
-            _i2C.Write((byte) register);
-            var result = _i2C.ReadAddressByte((int) register);
-            //byte result = readBuf[0];
-
-            if (IsDebug) Console.WriteLine("ReadRegister: {0}, result = {1}.", register, ByteToBinaryString(result));
-
+            var result = _i2C.ReadAddressByte((byte) register);
+            if (IsDebug) Console.WriteLine($"Result from ReadRegister: {register}, result = {ByteToBinaryString(result)}");
             return result;
         }
 

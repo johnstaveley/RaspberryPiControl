@@ -47,7 +47,7 @@ namespace Control
             // Allow servos to move to new position and then stop them. This removes jitter
             Thread.Sleep(1000);
             _servo1.DutyCycle = 0;
-            
+
             _outputPin1 = 17; // board pin 11
             _outputPin2 = 27; // board pin 13
             _outputPin3 = 16; // board pin 36
@@ -64,10 +64,9 @@ namespace Control
             Console.WriteLine("Setting up Pwm Driver");
             _pwmDriver = new PwmDriver();
             _pwmDriver.ResetDevice();
-            _pwmDriver.IsDebug = true;
             Thread.Sleep(1000);
-            //Console.WriteLine("Pwm rate");
-            //_pwmDriver.SetPwmUpdateRate(400);
+            Console.WriteLine("Pwm rate");
+            _pwmDriver.SetPwmUpdateRate(400);
             Console.WriteLine("Set all true");
             _pwmDriver.SetAllCall(true);
 
@@ -131,8 +130,8 @@ namespace Control
                             status = 400;
                             message = $"SetOutput value of {controlAction.Value} is illegal, must be either 0 or 1";
                         }
-                        var outputNumber = (int) controlAction.Number;
-                        var outputValue = (int) controlAction.Value;
+                        var outputNumber = (int)controlAction.Number;
+                        var outputValue = (int)controlAction.Value;
                         switch (outputNumber)
                         {
                             case 1:
@@ -152,13 +151,14 @@ namespace Control
                         {
                             status = 400;
                             message = "SetText Number must be 1 or 2 to indicate either the first or second line of the display";
-                        } else
+                        }
+                        else
                         {
-                            var xCoordinate = (int) controlAction.Value;
+                            var xCoordinate = (int)controlAction.Value;
                             var displayMessage = controlAction.Message
                                 .PadLeft(controlAction.Message.Length + xCoordinate, ' ')
                                 .PadRight(20 - controlAction.Message.Length - xCoordinate, ' ');
-                            _lcd.Write(0, (int) controlAction.Number - 1, displayMessage);
+                            _lcd.Write(0, (int)controlAction.Number - 1, displayMessage);
                         }
                         break;
                     case "SetPwm":
@@ -169,21 +169,22 @@ namespace Control
                         }
                         else
                         {
-                            var pwmMessage = controlAction.Number == -1 ? "All" : controlAction.Number.ToString();
-                            ConsoleHelper.WriteGreenMessage($"Setting pwm {pwmMessage} to value {controlAction.Value}");
-                            switch (controlAction.Number)
+                            var pwmNumber = (int)controlAction.Number;
+                            if (pwmNumber >= -1 && pwmNumber <= 15)
                             {
-                                case -1:
-                                    // All
-                                    _pwmDriver.SetDutyCycle(PwmDriver.PwmChannel.C0, controlAction.Value * 100);
-                                    Thread.Sleep(1000);
-                                    var value1 = _pwmDriver.GetPwmOn(PwmDriver.PwmChannel.C0);
-                                    ConsoleHelper.WriteColorMessage($"Pwm 0 value:{value1}", ConsoleColor.Yellow);
-                                    break;
-                                default:
-                                    status = 400;
-                                    message = $"Pwm {controlAction.Number} is illegal, must be either 1 or 2";
-                                    break;
+                                var pwmMessage = pwmNumber == -1 ? "All" : pwmNumber.ToString();
+                                ConsoleHelper.WriteGreenMessage($"Setting pwm {pwmMessage} to value {controlAction.Value}");
+                                PwmDriver.PwmChannel channel = PwmDriver.PwmChannel.ALL;
+                                if (pwmNumber >= 0)
+                                {
+                                    channel = (PwmDriver.PwmChannel)((int)(controlAction.Number));
+                                }
+                                _pwmDriver.SetDutyCycle(channel, controlAction.Value * 100);
+                            }
+                            else
+                            {
+                                status = 400;
+                                message = $"Pwm {controlAction.Number} is illegal, must be -1, 0 to 15";
                             }
                         }
                         break;
@@ -326,7 +327,7 @@ namespace Control
                 }
                 if (desiredProperties.Contains("ledState") && desiredProperties["ledState"] != null)
                 {
-                    var propertyValue = (string) desiredProperties["ledState"].ToString();
+                    var propertyValue = (string)desiredProperties["ledState"].ToString();
                     ledState1 = int.Parse(propertyValue) == 1;
                     Console.WriteLine($"Setting LED1 to {ledState1}");
                     _controller.Write(_outputPin1, ledState1 ? PinValue.High : PinValue.Low);

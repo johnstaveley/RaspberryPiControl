@@ -14,7 +14,7 @@ This project is to control a 4 relay header board on a Raspberry Pi from a remot
 - Switch input: Attach to pin 15
 - LCD 1602 with I2C interface. GND Pin 39, 5V Pin 2, SDA Pin 3, SCL Pin 5 such as this one: https://www.amazon.co.uk/gp/product/B07J2Q9LB7/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1
 - Connect Pi and relay board to 5V 3A supply
-- Mounting components on Din rail is optional but just helps to make things tidy
+- Mounting components on Din rail is optional but just helps to make things tidier
 - In Azure. Iot Hub and go to the following blades:
   - Shared access policy. For device and put in IoTHubConnectionString 
   - IoT Devices. Add your Raspberry Pi
@@ -24,9 +24,9 @@ This project is to control a 4 relay header board on a Raspberry Pi from a remot
 
 You can use the IoT Hub explorer to send direct messages to the Raspberry Pi and control its hardware using the 'ControlAction' direct method and following json package:
 {
-	"Method": SetRelay, GetRelay, SetServo, SetText, SetOutput, GetInput
-	"Number": Value of the hardware if applicable
-	"Value": 0 or 1 for relays and 0 to 1 for servos
+	"Method": SetRelay, GetRelay, SetServo, SetText, SetOutput, GetInput, SetPwm
+	"Number": Value of the hardware if applicable. -1 to 15 for Pwm
+	"Value": 0 or 1 for relays and 0 to 1 for servos and pwm
 	"Message": When writing to the screen, the message to send
 }
 
