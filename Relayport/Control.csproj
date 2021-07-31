@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Hardware\LedGrid.cs~RF3c886b0.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Iot.Device.Bindings" Version="1.4.0" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.37.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="5.0.0" />

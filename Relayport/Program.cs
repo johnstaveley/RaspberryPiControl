@@ -29,6 +29,34 @@ namespace Control
         static int _outputPin1;
         static int _outputPin2;
         static int _outputPin3;
+        static byte[] _smile = new byte[]
+        { 0b00111100,
+            0b01000010,
+            0b10100101,
+            0b10000001,
+            0b10100101,
+            0b10011001,
+            0b01000010,
+            0b00111100 };
+        static byte[] _neutral = new byte[]
+        { 0b00111100,
+            0b01000010,
+            0b10100101,
+            0b10000001,
+            0b10111101,
+            0b10000001,
+            0b01000010,
+            0b00111100 };
+        static byte[] _frown = new byte[]
+        { 0b00111100,
+            0b01000010,
+            0b10100101,
+            0b10000001,
+            0b10011001,
+            0b10100101,
+            0b01000010,
+            0b00111100 };
+        //static LedGrid _matrix = new LedGrid();
 
         static async Task Main(string[] args)
         {
@@ -114,6 +142,28 @@ namespace Control
                 string message = "";
                 switch (controlAction.Method)
                 {
+                    //case "LedGrid":
+                    //    var action = (int)controlAction.Number;
+                    //    switch (action)
+                    //    {
+                    //        case 1:
+                    //            _matrix.Clear();
+                    //            _matrix.DrawBitmap(0, 0, _smile, 8, 8, LedGrid.LedGreen);
+                    //            _matrix.WriteDisplay();
+                    //            break;
+                    //        case 2:
+                    //            _matrix.Clear();
+                    //            _matrix.DrawBitmap(0, 0, _neutral, 8, 8, LedGrid.LedYellow);
+                    //            _matrix.WriteDisplay();
+                    //            break;
+                    //        case 3:
+                    //            _matrix.Clear();
+                    //            _matrix.DrawBitmap(0, 0, _frown, 8, 8, LedGrid.LedRed);
+                    //            _matrix.WriteDisplay();
+                    //            break;
+                    //    }
+
+                    //    break;
                     case "GetInput":
                         var inputResult = _controller.Read(_inputPin);
                         status = 200;
@@ -130,8 +180,8 @@ namespace Control
                             status = 400;
                             message = $"SetOutput value of {controlAction.Value} is illegal, must be either 0 or 1";
                         }
-                        var outputNumber = (int) controlAction.Number;
-                        var outputValue = (int) controlAction.Value;
+                        var outputNumber = (int)controlAction.Number;
+                        var outputValue = (int)controlAction.Value;
                         switch (outputNumber)
                         {
                             case -1:
