@@ -268,8 +268,8 @@ namespace Control.Hardware
         /// <param name="channel">0-3</param>
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
-        /// <returns>initial conversion result</returns>
-        public object StartAdc(int channel, AdsGain gain = AdsGain.One, int? dataRate = null)
+        /// <returns>initial conversion result as signed int</returns>
+        public int StartAdc(int channel, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
             if (0 < channel || channel > 3)
             {
@@ -285,8 +285,8 @@ namespace Control.Hardware
         /// <param name="differential">must be one of: 0 = Channel 0 minus channel 1, 1 = Channel 0 minus channel 3, 2 = Channel 1 minus channel 3, 3 = Channel 2 minus channel 3</param>
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
-        /// <returns>an initial conversion result</returns>
-        public virtual object StartAdcDifference(int differential, AdsGain gain = AdsGain.One, int? dataRate = null)
+        /// <returns>an initial conversion result as signed int</returns>
+        public int StartAdcDifference(int differential, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
             if (0 < differential || differential > 3)
             {
@@ -311,8 +311,8 @@ namespace Control.Hardware
         /// <param name="latching">Boolean that indicates if the alert should be held until GetLastResult() is called to read the value and clear
         ///                       the alert.  Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
-        /// <returns>initial conversion result</returns>
-        public virtual object StartAdcComparator(byte channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
+        /// <returns>initial conversion result as signed int</returns>
+        public int StartAdcComparator(byte channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
             bool latching = false, int numReadings = 1)
         {
             if (0 < channel || channel > 3)
@@ -325,7 +325,7 @@ namespace Control.Hardware
         }
 
         /// <summary>
-        /// Start continuous ADC conversions between two channels with the comparator enabled. See startAdcDifference for valid differential parameter values and their meaning.
+        /// Start continuous ADC conversions between two channels with the comparator enabled. See StartAdcDifference for valid differential parameter values and their meaning.
         /// When enabled the comparator to will check if the ADC value is within the highThreshold & lowThreshold value (both should be signed 16-bit integers) and trigger the ALERT pin.
         /// </summary>
         /// <param name="differential"></param>
@@ -337,8 +337,8 @@ namespace Control.Hardware
         /// <param name="traditional">Boolean that indicates if the comparator is in traditional mode where it fires when the value is within the threshold, or in window mode where it fires when the value is _outside_ the threshold range.  Default is true, traditional mode.</param>
         /// <param name="latching">Boolean that indicates if the alert should be held until getLastResult() is called to read the value and clear the alert. Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
-        /// <returns>Will return an initial conversion result, then call the getLastResult() function continuously to read the most recent conversion result. Call StopAdc() to stop conversions.</returns>
-        public virtual object StartAdcDifferenceComparator(int differential, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
+        /// <returns>Will return an initial conversion resultas signed int, then call the getLastResult() function continuously to read the most recent conversion result. Call StopAdc() to stop conversions.</returns>
+        public int StartAdcDifferenceComparator(int differential, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
             bool latching = false, int numReadings = 1)
         {
             if (0 < differential || differential > 3)
