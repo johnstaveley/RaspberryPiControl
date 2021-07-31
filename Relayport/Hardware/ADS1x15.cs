@@ -1,3 +1,4 @@
+using Control.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -7,15 +8,15 @@ using Unosquare.RaspberryIO.Abstractions;
 namespace Control.Hardware
 {
 
-    public class ADS1x15
+    public class Ads1X15
     {
 
         /// <summary>
         /// The I2C device instance to be controlled. 
         /// </summary>
-        private II2CDevice _i2C;
+        private readonly II2CDevice _i2C;
 
-        private const byte ADS1x15_DEFAULT_ADDRESS = 0x48;
+        private const byte Ads1X15DefaultAddress = 0x48;
 
         private byte ADS1x15_POINTER_CONVERSION = 0x00;
 
@@ -29,13 +30,13 @@ namespace Control.Hardware
 
         private int ADS1x15_CONFIG_MUX_OFFSET = 12;
 
-        private Dictionary<double, int> ADS1x15_CONFIG_GAIN = new Dictionary<double, int> {
-            {2 / 3, 0x0000},
-            {1, 0x0200},
-            {2, 0x0400},
-            {4, 0x0600},
-            {8, 0x0800},
-            {16, 0x0A00}};
+        private readonly Dictionary<AdsGain, int> _ads1X15ConfigGain = new Dictionary<AdsGain, int> {
+            {AdsGain.TwoThirds, 0x0000},
+            {AdsGain.One, 0x0200},
+            {AdsGain.Two, 0x0400},
+            {AdsGain.Four, 0x0600},
+            {AdsGain.Eight, 0x0800},
+            {AdsGain.Sixteen, 0x0A00}};
 
         private int ADS1x15_CONFIG_MODE_CONTINUOUS = 0x0000;
 
@@ -44,7 +45,7 @@ namespace Control.Hardware
         /// <summary>
         /// Config for data rates
         /// </summary>
-        private Dictionary<int, int> ADS1115_CONFIG_DR = new Dictionary<int, int> {
+        private readonly Dictionary<int, int> _ads1115ConfigDr = new Dictionary<int, int> {
             {8, 0x0000},
             {16, 0x0020},
             {32, 0x0040},
@@ -60,7 +61,7 @@ namespace Control.Hardware
 
         private byte ADS1x15_CONFIG_COMP_LATCHING = 0x0004;
 
-        private Dictionary<int, byte> ADS1x15_CONFIG_COMP_QUE = new Dictionary<int, byte> {
+        private readonly Dictionary<int, byte> _ads1X15ConfigCompQue = new Dictionary<int, byte> {
             {1, 0x0000},
             {2, 0x0001},
             {4, 0x0002}};
@@ -68,7 +69,7 @@ namespace Control.Hardware
         private int ADS1x15_CONFIG_COMP_QUE_DISABLE = 0x0003;
 
         // Base functionality for ADS1x15 analog to digital converters.
-        public ADS1x15(byte address = ADS1x15_DEFAULT_ADDRESS)
+        public Ads1X15(byte address = Ads1X15DefaultAddress)
         {
             _i2C = Pi.I2C.GetDeviceById(address);
         }
@@ -77,7 +78,7 @@ namespace Control.Hardware
         /// Retrieve the default data rate for this ADC (in samples per second). 
         /// </summary>
         /// <returns></returns>
-        public virtual int GetDataRateDefault()
+        private int GetDataRateDefault()
         {
             return 128;
         }
@@ -87,18 +88,23 @@ namespace Control.Hardware
         /// </summary>
         /// <param name="dataRate"></param>
         /// <returns>16-bit value that can be OR'ed with the config register to set the specified data rate</returns>
-        public int GetDataRateConfig(int dataRate)
+        private int GetDataRateConfig(int dataRate)
         {
-            if (!ADS1115_CONFIG_DR.ContainsKey(dataRate))
+            if (!_ads1115ConfigDr.ContainsKey(dataRate))
             {
                 throw new ArgumentException($"{nameof(dataRate)} must be one of: 8, 16, 32, 64, 128, 250, 475, 860");
             }
-            return ADS1115_CONFIG_DR[dataRate];
+            return _ads1115ConfigDr[dataRate];
         }
 
-        public int GetConversionValue(byte low, byte high)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="low"></param>
+        /// <param name="high"></param>
+        /// <returns>16 bit signed value</returns>
+        private int GetConversionValue(byte low, byte high)
         {
-            // Convert to 16-bit signed value.
             var value = (((high & 0xFF) << 8) | (low & 0xFF));
             // Check for sign bit and turn into a negative value if set.
             if ((byte)(value & 0x8000) != 0)
@@ -114,19 +120,18 @@ namespace Control.Hardware
         /// <param name="mux"></param>
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
-        /// <param name="mode"></param>
+        /// <param name="mode">Continuous or single shot</param>
         /// <returns>signed integer result of the read.</returns>
-        public int Read(int mux, double gain, int? dataRate, int mode)
+        private int Read(int mux, AdsGain gain, int? dataRate, int mode)
         {
             var config = ADS1x15_CONFIG_OS_SINGLE;
-            // Specify mux value.
             config |= (mux & 0x07) << ADS1x15_CONFIG_MUX_OFFSET;
             // Validate the passed in gain and then set it in the config.
-            if (!ADS1x15_CONFIG_GAIN.ContainsKey(gain))
+            if (!_ads1X15ConfigGain.ContainsKey(gain))
             {
                 throw new ArgumentException("Gain must be one of: 2/3, 1, 2, 4, 8, 16");
             }
-            config |= ADS1x15_CONFIG_GAIN[gain];
+            config |= _ads1X15ConfigGain[gain];
             // Set the mode (continuous or single shot).
             config |= mode;
             // Get the default data rate if none is specified (default differs between ADS1015 and ADS1115).
@@ -134,8 +139,7 @@ namespace Control.Hardware
             // Set the data rate (this is controlled by the subclass as it differs between ADS1015 and ADS1115).
             config |= GetDataRateConfig(dataRate.Value);
             config |= ADS1x15_CONFIG_COMP_QUE_DISABLE;
-            // Send the config value to start the ADC conversion.
-            // Explicitly break the 16-bit value down to a big endian pair of bytes.
+            // Send the config value to start the ADC conversion. Explicitly break the 16-bit value down to a big endian pair of bytes.
             //_i2C.writeList(ADS1x15_POINTER_CONFIG, new List<object> {config >> 8 & 0xFF, config & 0xFF});
             _i2C.Write(new [] { ADS1x15_POINTER_CONFIG, (byte)(config >> 8 & 0xFF), (byte)(config & 0xFF) });
 
@@ -156,21 +160,23 @@ namespace Control.Hardware
         /// <param name="mux"></param>
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
-        /// <param name="mode"></param>
+        /// <param name="mode">Continuous or single shot</param>
         /// <param name="highThreshold"></param>
         /// <param name="lowThreshold"></param>
-        /// <param name="activeLow"></param>
-        /// <param name="traditional"></param>
-        /// <param name="latching"></param>
-        /// <param name="numReadings"></param>
+        /// <param name="activeLow">Boolean that indicates if ALERT is pulled low or high when active/triggered. Default is true</param>
+        /// <param name="traditional">Boolean that indicates if the comparator is in traditional mode where it fires when the value is within the threshold,
+        ///                          or in window mode where it fires when the value is _outside_ the threshold range.  Default is true</param>
+        /// <param name="latching">Boolean that indicates if the alert should be held until GetLastResult() is called to read the value and clear
+        ///                       the alert.  Default is false, non-latching.</param>
+        /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>Signed integer result of the read.</returns>
-        public virtual int ReadComparator(int mux, double gain, int? dataRate, int mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, int numReadings)
+        private int ReadComparator(int mux, AdsGain gain, int? dataRate, int mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, int numReadings)
         {
             if (!(numReadings == 1 || numReadings == 2 || numReadings == 4))
             {
                 throw new ArgumentException($"{nameof(numReadings)} must be 1, 2, or 4!");
             }
-            if (!ADS1x15_CONFIG_GAIN.ContainsKey(gain))
+            if (!_ads1X15ConfigGain.ContainsKey(gain))
             {
                 throw new ArgumentException("Gain must be one of: 2/3, 1, 2, 4, 8, 16");
             }
@@ -181,17 +187,14 @@ namespace Control.Hardware
             _i2C.Write(new [] { ADS1x15_POINTER_lowThreshold, (byte)(lowThreshold >> 8 & 0xFF), (byte)(lowThreshold & 0xFF) });
             // Now build up the appropriate config register value.
             var config = ADS1x15_CONFIG_OS_SINGLE;
-            // Specify mux value.
             config |= (mux & 0x07) << ADS1x15_CONFIG_MUX_OFFSET;
             // Validate the passed in gain and then set it in the config.
-            config |= ADS1x15_CONFIG_GAIN[gain];
+            config |= _ads1X15ConfigGain[gain];
             // Set the mode (continuous or single shot).
             config |= mode;
-            // Get the default data rate if none is specified (default differs between
-            // ADS1015 and ADS1115).
+            // Get the default data rate if none is specified (default differs between ADS1015 and ADS1115).
             dataRate ??= GetDataRateDefault();
-            // Set the data rate (this is controlled by the subclass as it differs
-            // between ADS1015 and ADS1115).
+            // Set the data rate (this is controlled by the subclass as it differs between ADS1015 and ADS1115).
             config |= GetDataRateConfig(dataRate.Value);
             // Enable window mode if required.
             if (!traditional)
@@ -209,7 +212,7 @@ namespace Control.Hardware
                 config |= ADS1x15_CONFIG_COMP_LATCHING;
             }
             // Set number of comparator hits before alerting.
-            config |= ADS1x15_CONFIG_COMP_QUE[numReadings];
+            config |= _ads1X15ConfigCompQue[numReadings];
             // Send the config value to start the ADC conversion. Explicitly break the 16-bit value down to a big endian pair of bytes.
             //            _i2C.writeList(ADS1x15_POINTER_CONFIG, new List<object> {config >> 8 & 0xFF, config & 0xFF});
             _i2C.Write(new [] { ADS1x15_POINTER_CONFIG, (byte)(config >> 8 & 0xFF), (byte)(config & 0xFF) });
@@ -227,11 +230,11 @@ namespace Control.Hardware
         /// <summary>
         /// Read a single ADC channel and return the ADC value 
         /// </summary>
-        /// <param name="channel">within 0-3</param>
+        /// <param name="channel">0-3</param>
         /// <param name="gain"></param>
         /// <param name="dataRate">Optional</param>
         /// <returns>signed integer </returns>
-        public int ReadAdc(byte channel, double gain = 1, int? dataRate = null)
+        public int ReadAdc(byte channel, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
             if (0 < channel || channel > 3)
             {
@@ -246,9 +249,9 @@ namespace Control.Hardware
         /// </summary>
         /// <param name="differential">must be one of 0 = Channel 0 minus channel 1, 1 = Channel 0 minus channel 3, 2 = Channel 1 minus channel 3, 3 = Channel 2 minus channel 3</param>
         /// <param name="gain"></param>
-        /// <param name="dataRate"></param>
+        /// <param name="dataRate">Optional, if not set uses default</param>
         /// <returns>the ADC value as a signed integer result</returns>
-        public int ReadAdcDifference(int differential, double gain = 1, int? dataRate = null)
+        public int ReadAdcDifference(int differential, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
             if (0 < differential || differential > 3)
             {
@@ -266,7 +269,7 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
         /// <returns>initial conversion result</returns>
-        public object StartAdc(int channel, double gain = 1, int? dataRate = null)
+        public object StartAdc(int channel, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
             if (0 < channel || channel > 3)
             {
@@ -283,14 +286,13 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
         /// <returns>an initial conversion result</returns>
-        public virtual object StartAdcDifference(int differential, double gain = 1, int? dataRate = null)
+        public virtual object StartAdcDifference(int differential, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
             if (0 < differential || differential > 3)
             {
                 throw new ArgumentException($"{nameof(differential)} must be between 0 and 3");
             }
-            // Perform a single shot read using the provided differential value
-            // as the mux value (which will enable differential mode).
+            // Perform a single shot read using the provided differential value as the mux value (which will enable differential mode).
             return Read(differential, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS);
         }
 
@@ -310,7 +312,7 @@ namespace Control.Hardware
         ///                       the alert.  Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>initial conversion result</returns>
-        public virtual object StartAdcComparator(byte channel, int highThreshold, int lowThreshold, double gain = 1, int? dataRate = null, bool activeLow = true, bool traditional = true,
+        public virtual object StartAdcComparator(byte channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
             bool latching = false, int numReadings = 1)
         {
             if (0 < channel || channel > 3)
@@ -336,7 +338,7 @@ namespace Control.Hardware
         /// <param name="latching">Boolean that indicates if the alert should be held until getLastResult() is called to read the value and clear the alert. Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>Will return an initial conversion result, then call the getLastResult() function continuously to read the most recent conversion result. Call StopAdc() to stop conversions.</returns>
-        public virtual object StartAdcDifferenceComparator(int differential, int highThreshold, int lowThreshold, double gain = 1, int? dataRate = null, bool activeLow = true, bool traditional = true,
+        public virtual object StartAdcDifferenceComparator(int differential, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
             bool latching = false, int numReadings = 1)
         {
             if (0 < differential || differential > 3)
@@ -347,7 +349,6 @@ namespace Control.Hardware
             return ReadComparator(differential, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
         }
 
-         
         /// <summary>
         /// Stop all continuous ADC conversions (either normal or difference mode).
         /// </summary>         
@@ -366,8 +367,7 @@ namespace Control.Hardware
         /// <returns>Will return a signed integer value.</returns>
         public int GetLastResult()
         {
-            // Retrieve the conversion register value, convert to a signed int, and
-            // return it.
+            // Retrieve the conversion register value, convert to a signed int, and return it.
             //var result = _i2C.readList(ADS1x15_POINTER_CONVERSION, 2);
             //return _conversion_value(result[1], result[0]);
             var result0 = _i2C.ReadAddressByte(ADS1x15_POINTER_CONVERSION);
