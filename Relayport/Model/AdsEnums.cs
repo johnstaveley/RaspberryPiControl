@@ -16,4 +16,10 @@
         Two = 2,
         Three = 3
     }
+    public enum AdsNumberOfReadings
+    {
+        One = 1,
+        Two = 2,
+        Four = 4
+    }
  }

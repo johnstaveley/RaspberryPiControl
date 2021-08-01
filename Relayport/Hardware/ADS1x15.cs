@@ -61,10 +61,10 @@ namespace Control.Hardware
 
         private byte ADS1x15_CONFIG_COMP_LATCHING = 0x0004;
 
-        private readonly Dictionary<int, byte> _ads1X15ConfigCompQue = new Dictionary<int, byte> {
-            {1, 0x0000},
-            {2, 0x0001},
-            {4, 0x0002}};
+        private readonly Dictionary<AdsNumberOfReadings, byte> _ads1X15ConfigCompQue = new Dictionary<AdsNumberOfReadings, byte> {
+            {AdsNumberOfReadings.One, 0x0000},
+            {AdsNumberOfReadings.Two, 0x0001},
+            {AdsNumberOfReadings.Four, 0x0002}};
 
         private int ADS1x15_CONFIG_COMP_QUE_DISABLE = 0x0003;
 
@@ -170,12 +170,8 @@ namespace Control.Hardware
         ///                       the alert.  Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>Signed integer result of the read.</returns>
-        private int ReadComparator(int mux, AdsGain gain, int? dataRate, int mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, int numReadings)
+        private int ReadComparator(int mux, AdsGain gain, int? dataRate, int mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, AdsNumberOfReadings numReadings)
         {
-            if (!(numReadings == 1 || numReadings == 2 || numReadings == 4))
-            {
-                throw new ArgumentException($"{nameof(numReadings)} must be 1, 2, or 4!");
-            }
             if (!_ads1X15ConfigGain.ContainsKey(gain))
             {
                 throw new ArgumentException("Gain must be one of: 2/3, 1, 2, 4, 8, 16");
@@ -305,7 +301,7 @@ namespace Control.Hardware
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>initial conversion result as signed int</returns>
         public int StartAdcComparator(AdsChannel channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
-            bool latching = false, int numReadings = 1)
+            bool latching = false, AdsNumberOfReadings numReadings = AdsNumberOfReadings.One)
         {
             // Start continuous reads with comparator and set the mux value to the channel plus the highest bit (bit 3) set.
             return ReadComparator((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
@@ -326,7 +322,7 @@ namespace Control.Hardware
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>Will return an initial conversion resultas signed int, then call the getLastResult() function continuously to read the most recent conversion result. Call StopAdc() to stop conversions.</returns>
         public int StartAdcDifferenceComparator(int differential, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
-            bool latching = false, int numReadings = 1)
+            bool latching = false, AdsNumberOfReadings numReadings = AdsNumberOfReadings.One)
         {
             if (0 < differential || differential > 3)
             {
