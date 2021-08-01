@@ -100,8 +100,7 @@ namespace Control
             _pwmDriver.SetAllCall(true);
 
             Console.WriteLine("Starting Ads");
-            //_ads = new Ads1X15();
-            //_ads.ReadAdc(AdsChannel.Zero, AdsGain.One);
+            _ads = new Ads1X15();
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
@@ -173,6 +172,12 @@ namespace Control
                         var inputResult = _controller.Read(_inputPin);
                         status = 200;
                         message = $"GetInput: Value is {inputResult}";
+                        break;
+                    case "GetAnalogue":
+                        var analogueChannel = (AdsChannel) (int) controlAction.Number;
+                        var analogueResult = _ads.ReadAdc(analogueChannel);
+                        status = 200;
+                        message = $"GetAnalogue: Value is {analogueResult}";
                         break;
                     case "SetOutput":
                         if (!(controlAction.Number is -1 or 1 or 2 or 3))

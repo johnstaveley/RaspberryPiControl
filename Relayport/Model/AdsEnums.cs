@@ -11,15 +11,26 @@
     }
     public enum AdsChannel
     {
-        Zero = 0,
-        One = 1,
-        Two = 2,
-        Three = 3
+        CH0 = 0,
+        CH1 = 1,
+        CH2 = 2,
+        CH3 = 3
     }
     public enum AdsNumberOfReadings
     {
-        One = 1,
-        Two = 2,
-        Four = 4
+        N1 = 1,
+        N2 = 2,
+        N4 = 4
+    }
+    public enum AdsDataRate
+    {
+        DR008 = 8,
+        DR016 = 16,
+        DR032 = 32,
+        DR064 = 64,
+        DR128 = 128,
+        DR250 = 250,
+        DR475 = 475,
+        DR860 = 860
     }
  }

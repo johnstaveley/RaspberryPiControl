@@ -45,15 +45,15 @@ namespace Control.Hardware
         /// <summary>
         /// Config for data rates
         /// </summary>
-        private readonly Dictionary<int, int> _ads1115ConfigDr = new Dictionary<int, int> {
-            {8, 0x0000},
-            {16, 0x0020},
-            {32, 0x0040},
-            {64, 0x0060},
-            {128, 0x0080},
-            {250, 0x00A0},
-            {475, 0x00C0},
-            {860, 0x00E0}};
+        private readonly Dictionary<AdsDataRate, int> _ads1115ConfigDr = new Dictionary<AdsDataRate, int> {
+            {AdsDataRate.DR008, 0x0000},
+            {AdsDataRate.DR016, 0x0020},
+            {AdsDataRate.DR032, 0x0040},
+            {AdsDataRate.DR064, 0x0060},
+            {AdsDataRate.DR128, 0x0080},
+            {AdsDataRate.DR250, 0x00A0},
+            {AdsDataRate.DR475, 0x00C0},
+            {AdsDataRate.DR860, 0x00E0}};
 
         private byte ADS1x15_CONFIG_COMP_WINDOW = 0x0010;
 
@@ -62,9 +62,9 @@ namespace Control.Hardware
         private byte ADS1x15_CONFIG_COMP_LATCHING = 0x0004;
 
         private readonly Dictionary<AdsNumberOfReadings, byte> _ads1X15ConfigCompQue = new Dictionary<AdsNumberOfReadings, byte> {
-            {AdsNumberOfReadings.One, 0x0000},
-            {AdsNumberOfReadings.Two, 0x0001},
-            {AdsNumberOfReadings.Four, 0x0002}};
+            {AdsNumberOfReadings.N1, 0x0000},
+            {AdsNumberOfReadings.N2, 0x0001},
+            {AdsNumberOfReadings.N4, 0x0002}};
 
         private int ADS1x15_CONFIG_COMP_QUE_DISABLE = 0x0003;
 
@@ -78,9 +78,9 @@ namespace Control.Hardware
         /// Retrieve the default data rate for this ADC (in samples per second). 
         /// </summary>
         /// <returns></returns>
-        private int GetDataRateDefault()
+        private AdsDataRate GetDataRateDefault()
         {
-            return 128;
+            return AdsDataRate.DR128;
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Control.Hardware
         /// </summary>
         /// <param name="dataRate"></param>
         /// <returns>16-bit value that can be OR'ed with the config register to set the specified data rate</returns>
-        private int GetDataRateConfig(int dataRate)
+        private int GetDataRateConfig(AdsDataRate dataRate)
         {
             if (!_ads1115ConfigDr.ContainsKey(dataRate))
             {
@@ -122,7 +122,7 @@ namespace Control.Hardware
         /// <param name="dataRate"></param>
         /// <param name="mode">Continuous or single shot</param>
         /// <returns>signed integer result of the read.</returns>
-        private int Read(int mux, AdsGain gain, int? dataRate, int mode)
+        private int Read(int mux, AdsGain gain, AdsDataRate? dataRate, int mode)
         {
             var config = ADS1x15_CONFIG_OS_SINGLE;
             config |= (mux & 0x07) << ADS1x15_CONFIG_MUX_OFFSET;
@@ -146,7 +146,7 @@ namespace Control.Hardware
             // Wait for the ADC sample to finish based on the sample rate plus a
             // small offset to be sure (0.1 millisecond).
             //Thread.Sleep(1.0 / dataRate + 0.0001);
-            Thread.Sleep(1 + (int)(1.0 / dataRate * 0.001));
+            Thread.Sleep(1 + (int)(1.0 / (int) dataRate * 0.001));
             // Retrieve the result.
             //var result = _i2C.readList(ADS1x15_POINTER_CONVERSION, 2);
             var result0 = _i2C.ReadAddressByte(ADS1x15_POINTER_CONVERSION);
@@ -170,7 +170,7 @@ namespace Control.Hardware
         ///                       the alert.  Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>Signed integer result of the read.</returns>
-        private int ReadComparator(int mux, AdsGain gain, int? dataRate, int mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, AdsNumberOfReadings numReadings)
+        private int ReadComparator(int mux, AdsGain gain, AdsDataRate? dataRate, int mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, AdsNumberOfReadings numReadings)
         {
             if (!_ads1X15ConfigGain.ContainsKey(gain))
             {
@@ -214,7 +214,7 @@ namespace Control.Hardware
             _i2C.Write(new [] { ADS1x15_POINTER_CONFIG, (byte)(config >> 8 & 0xFF), (byte)(config & 0xFF) });
             // Wait for the ADC sample to finish based on the sample rate plus a small offset to be sure (0.1 millisecond).
             //Thread.Sleep(1.0 / dataRate + 0.0001);
-            Thread.Sleep(1 + (int)(1.0 / dataRate * 0.001));
+            Thread.Sleep(1 + (int)(1.0 / (int) dataRate * 0.001));
             // Retrieve the result.
             //var result = _i2C.readList(ADS1x15_POINTER_CONVERSION, 2);
             //            return _conversion_value(result[1], result[0]);
@@ -230,7 +230,7 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate">Optional</param>
         /// <returns>signed integer </returns>
-        public int ReadAdc(AdsChannel channel, AdsGain gain = AdsGain.One, int? dataRate = null)
+        public int ReadAdc(AdsChannel channel, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null)
         {
             // Perform a single shot read and set the mux value to the channel plus the highest bit (bit 3) set.
             return Read((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_SINGLE);
@@ -243,7 +243,7 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate">Optional, if not set uses default</param>
         /// <returns>the ADC value as a signed integer result</returns>
-        public int ReadAdcDifference(int differential, AdsGain gain = AdsGain.One, int? dataRate = null)
+        public int ReadAdcDifference(int differential, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null)
         {
             if (0 < differential || differential > 3)
             {
@@ -261,7 +261,7 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
         /// <returns>initial conversion result as signed int</returns>
-        public int StartAdc(AdsChannel channel, AdsGain gain = AdsGain.One, int? dataRate = null)
+        public int StartAdc(AdsChannel channel, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null)
         {
             // Start continuous reads and set the mux value to the channel plus the highest bit (bit 3) set.
             return Read((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS);
@@ -274,18 +274,18 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
         /// <returns>an initial conversion result as signed int</returns>
-        public int StartAdcDifference(int differential, AdsGain gain = AdsGain.One, int? dataRate = null)
+        public int StartAdcDifference(int differential, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null)
         {
             if (0 < differential || differential > 3)
             {
                 throw new ArgumentException($"{nameof(differential)} must be between 0 and 3");
             }
-            // Perform a single shot read using the provided differential value as the mux value (which will enable differential mode).
+            // Perform a single shot read using the provided differential value as the mux value (which will enable differential mode)
             return Read(differential, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS);
         }
 
         /// <summary>
-        /// Start continuous ADC conversions on the specified channel with the comparator enabled. When enabled the comparator to will check if the ADC value is within the highThreshold &
+        /// Start continuous ADC conversions on the specified channel with the comparator enabled. When enabled the comparator to will check if the ADC value is within the highThreshold and
         /// lowThreshold value and trigger the ALERT pin. Then call the GetLastResult() function continuously to read the most recent conversion result. Call StopAdc() to stop conversions.
         /// </summary>
         /// <param name="channel">0-3</param>
@@ -294,14 +294,12 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
         /// <param name="activeLow">Boolean that indicates if ALERT is pulled low or high when active/triggered. Default is true</param>
-        /// <param name="traditional">Boolean that indicates if the comparator is in traditional mode where it fires when the value is within the threshold,
-        ///                          or in window mode where it fires when the value is _outside_ the threshold range.  Default is true</param>
-        /// <param name="latching">Boolean that indicates if the alert should be held until GetLastResult() is called to read the value and clear
-        ///                       the alert.  Default is false, non-latching.</param>
+        /// <param name="traditional">Boolean that indicates if the comparator is in traditional mode where it fires when the value is within the threshold, or in window mode where it fires when the value is _outside_ the threshold range.  Default is true</param>
+        /// <param name="latching">Boolean that indicates if the alert should be held until GetLastResult() is called to read the value and clear the alert.  Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>initial conversion result as signed int</returns>
-        public int StartAdcComparator(AdsChannel channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
-            bool latching = false, AdsNumberOfReadings numReadings = AdsNumberOfReadings.One)
+        public int StartAdcComparator(AdsChannel channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null, bool activeLow = true, bool traditional = true,
+            bool latching = false, AdsNumberOfReadings numReadings = AdsNumberOfReadings.N1)
         {
             // Start continuous reads with comparator and set the mux value to the channel plus the highest bit (bit 3) set.
             return ReadComparator((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
@@ -309,7 +307,7 @@ namespace Control.Hardware
 
         /// <summary>
         /// Start continuous ADC conversions between two channels with the comparator enabled. See StartAdcDifference for valid differential parameter values and their meaning.
-        /// When enabled the comparator to will check if the ADC value is within the highThreshold & lowThreshold value (both should be signed 16-bit integers) and trigger the ALERT pin.
+        /// When enabled the comparator to will check if the ADC value is within the highThreshold and lowThreshold value (both should be signed 16-bit integers) and trigger the ALERT pin.
         /// </summary>
         /// <param name="differential"></param>
         /// <param name="highThreshold"></param>
@@ -321,8 +319,8 @@ namespace Control.Hardware
         /// <param name="latching">Boolean that indicates if the alert should be held until getLastResult() is called to read the value and clear the alert. Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>Will return an initial conversion resultas signed int, then call the getLastResult() function continuously to read the most recent conversion result. Call StopAdc() to stop conversions.</returns>
-        public int StartAdcDifferenceComparator(int differential, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
-            bool latching = false, AdsNumberOfReadings numReadings = AdsNumberOfReadings.One)
+        public int StartAdcDifferenceComparator(int differential, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null, bool activeLow = true, bool traditional = true,
+            bool latching = false, AdsNumberOfReadings numReadings = AdsNumberOfReadings.N1)
         {
             if (0 < differential || differential > 3)
             {
