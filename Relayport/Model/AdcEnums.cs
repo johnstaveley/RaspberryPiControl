@@ -33,4 +33,9 @@
         DR475 = 475,
         DR860 = 860
     }
+    public enum AdsMode
+    {
+        Continuous = 0x0000,
+        Single = 0x0100
+    }
  }

@@ -2,6 +2,7 @@ using Control.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Iot.Device.Mcp3428;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Abstractions;
 
@@ -37,10 +38,6 @@ namespace Control.Hardware
             {AdsGain.Four, 0x0600},
             {AdsGain.Eight, 0x0800},
             {AdsGain.Sixteen, 0x0A00}};
-
-        private int ADS1x15_CONFIG_MODE_CONTINUOUS = 0x0000;
-
-        private int ADS1x15_CONFIG_MODE_SINGLE = 0x0100;
 
         /// <summary>
         /// Config for data rates
@@ -122,7 +119,7 @@ namespace Control.Hardware
         /// <param name="dataRate"></param>
         /// <param name="mode">Continuous or single shot</param>
         /// <returns>signed integer result of the read.</returns>
-        private int Read(int mux, AdsGain gain, AdsDataRate? dataRate, int mode)
+        private int Read(int mux, AdsGain gain, AdsDataRate? dataRate, AdsMode mode)
         {
             var config = ADS1x15_CONFIG_OS_SINGLE;
             config |= (mux & 0x07) << ADS1x15_CONFIG_MUX_OFFSET;
@@ -133,7 +130,7 @@ namespace Control.Hardware
             }
             config |= _ads1X15ConfigGain[gain];
             // Set the mode (continuous or single shot).
-            config |= mode;
+            config |= (int) mode;
             // Get the default data rate if none is specified (default differs between ADS1015 and ADS1115).
             dataRate ??= GetDataRateDefault();
             // Set the data rate (this is controlled by the subclass as it differs between ADS1015 and ADS1115).
@@ -170,7 +167,7 @@ namespace Control.Hardware
         ///                       the alert.  Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>Signed integer result of the read.</returns>
-        private int ReadComparator(int mux, AdsGain gain, AdsDataRate? dataRate, int mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, AdsNumberOfReadings numReadings)
+        private int ReadComparator(int mux, AdsGain gain, AdsDataRate? dataRate, AdsMode mode, int highThreshold, int lowThreshold, bool activeLow, bool traditional, bool latching, AdsNumberOfReadings numReadings)
         {
             if (!_ads1X15ConfigGain.ContainsKey(gain))
             {
@@ -187,7 +184,7 @@ namespace Control.Hardware
             // Validate the passed in gain and then set it in the config.
             config |= _ads1X15ConfigGain[gain];
             // Set the mode (continuous or single shot).
-            config |= mode;
+            config |= (int) mode;
             // Get the default data rate if none is specified (default differs between ADS1015 and ADS1115).
             dataRate ??= GetDataRateDefault();
             // Set the data rate (this is controlled by the subclass as it differs between ADS1015 and ADS1115).
@@ -233,7 +230,7 @@ namespace Control.Hardware
         public int ReadAdc(AdsChannel channel, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null)
         {
             // Perform a single shot read and set the mux value to the channel plus the highest bit (bit 3) set.
-            return Read((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_SINGLE);
+            return Read((int) channel + 0x04, gain, dataRate, AdsMode.Single);
         }
 
         /// <summary>
@@ -251,7 +248,7 @@ namespace Control.Hardware
             }
             // Perform a single shot read using the provided differential value
             // as the mux value (which will enable differential mode).
-            return Read(differential, gain, dataRate, ADS1x15_CONFIG_MODE_SINGLE);
+            return Read(differential, gain, dataRate, AdsMode.Single);
         }
 
         /// <summary>
@@ -264,7 +261,7 @@ namespace Control.Hardware
         public int StartAdc(AdsChannel channel, AdsGain gain = AdsGain.One, AdsDataRate? dataRate = null)
         {
             // Start continuous reads and set the mux value to the channel plus the highest bit (bit 3) set.
-            return Read((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS);
+            return Read((int) channel + 0x04, gain, dataRate, AdsMode.Continuous);
         }
 
         /// <summary>
@@ -281,7 +278,7 @@ namespace Control.Hardware
                 throw new ArgumentException($"{nameof(differential)} must be between 0 and 3");
             }
             // Perform a single shot read using the provided differential value as the mux value (which will enable differential mode)
-            return Read(differential, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS);
+            return Read(differential, gain, dataRate, AdsMode.Continuous);
         }
 
         /// <summary>
@@ -302,7 +299,7 @@ namespace Control.Hardware
             bool latching = false, AdsNumberOfReadings numReadings = AdsNumberOfReadings.N1)
         {
             // Start continuous reads with comparator and set the mux value to the channel plus the highest bit (bit 3) set.
-            return ReadComparator((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
+            return ReadComparator((int) channel + 0x04, gain, dataRate, AdsMode.Continuous, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
         }
 
         /// <summary>
@@ -327,7 +324,7 @@ namespace Control.Hardware
                 throw new ArgumentException($"{nameof(differential)} must be between 0 and 3");
             }
             // Start continuous reads with comparator and set the mux value to the channel plus the highest bit (bit 3) set.
-            return ReadComparator(differential, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
+            return ReadComparator(differential, gain, dataRate, AdsMode.Continuous, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
         }
 
         /// <summary>
