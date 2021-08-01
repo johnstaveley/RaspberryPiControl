@@ -234,14 +234,10 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate">Optional</param>
         /// <returns>signed integer </returns>
-        public int ReadAdc(byte channel, AdsGain gain = AdsGain.One, int? dataRate = null)
+        public int ReadAdc(AdsChannel channel, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
-            if (0 < channel || channel > 3)
-            {
-                throw new ArgumentException($"{nameof(channel)} must be between 0 and 3");
-            }
             // Perform a single shot read and set the mux value to the channel plus the highest bit (bit 3) set.
-            return Read(channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_SINGLE);
+            return Read((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_SINGLE);
         }
 
         /// <summary>
@@ -269,14 +265,10 @@ namespace Control.Hardware
         /// <param name="gain"></param>
         /// <param name="dataRate"></param>
         /// <returns>initial conversion result as signed int</returns>
-        public int StartAdc(int channel, AdsGain gain = AdsGain.One, int? dataRate = null)
+        public int StartAdc(AdsChannel channel, AdsGain gain = AdsGain.One, int? dataRate = null)
         {
-            if (0 < channel || channel > 3)
-            {
-                throw new ArgumentException($"{nameof(channel)} must be between 0 and 3");
-            }
             // Start continuous reads and set the mux value to the channel plus the highest bit (bit 3) set.
-            return Read(channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS);
+            return Read((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS);
         }
 
         /// <summary>
@@ -312,16 +304,11 @@ namespace Control.Hardware
         ///                       the alert.  Default is false, non-latching.</param>
         /// <param name="numReadings">The number of readings that match the comparator before triggering the alert.  Can be 1, 2, or 4.  Default is 1.</param>
         /// <returns>initial conversion result as signed int</returns>
-        public int StartAdcComparator(byte channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
+        public int StartAdcComparator(AdsChannel channel, int highThreshold, int lowThreshold, AdsGain gain = AdsGain.One, int? dataRate = null, bool activeLow = true, bool traditional = true,
             bool latching = false, int numReadings = 1)
         {
-            if (0 < channel || channel > 3)
-            {
-                throw new ArgumentException($"{nameof(channel)} must be between 0 and 3");
-            }
-
             // Start continuous reads with comparator and set the mux value to the channel plus the highest bit (bit 3) set.
-            return ReadComparator(channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
+            return ReadComparator((int) channel + 0x04, gain, dataRate, ADS1x15_CONFIG_MODE_CONTINUOUS, highThreshold, lowThreshold, activeLow, traditional, latching, numReadings);
         }
 
         /// <summary>

@@ -25,6 +25,7 @@ namespace Control
         static Lcd1602 _lcd;
         static bool ledState1;
         static System.Device.Gpio.GpioController _controller;
+        static Ads1X15 _ads;
         static int _inputPin;
         static int _outputPin1;
         static int _outputPin2;
@@ -97,6 +98,10 @@ namespace Control
             _pwmDriver.SetPwmUpdateRate(400);
             Console.WriteLine("Set all true");
             _pwmDriver.SetAllCall(true);
+
+            Console.WriteLine("Starting Ads");
+            //_ads = new Ads1X15();
+            //_ads.ReadAdc(AdsChannel.Zero, AdsGain.One);
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
