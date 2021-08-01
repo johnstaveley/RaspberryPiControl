@@ -3,8 +3,9 @@
 This project is to control various hardware on a Raspberry Pi from a remote web page.
 Hardware includes:
 * A 4 relay header board to control a lamp and solenoid
-* LCD Display
-* 16 PWM Devices including continuous and angular servos
+* LCD Display LCD1602
+* PWM Devices hub can control up to 16 servos including continuous and angular servos
+* Analogue to Digital hub ADS1115 with programmable gain
 
 ## Setup
 
