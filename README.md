@@ -13,7 +13,6 @@ Hardware includes:
 
 - Stack 4 relay board on top of Raspberry pi
 - Servo 1: Attach Black to pin 9, Red to pin 1 and White/Yellow to pin 12
-- Servo 2: Attach Black to pin 6, Red to pin 17 and White/Yellow to pin 
 	NB: Depending on your servos you may have to connect these to 5V instead
 - LEDS: Attach to pins 11, 13, 36
 - Switch input: Attach to pin 15
@@ -24,6 +23,11 @@ Hardware includes:
   - Shared access policy. For device and put in IoTHubConnectionString 
   - IoT Devices. Add your Raspberry Pi
   - Networking. Don't put in IP restrictions if you want your azure function to be able to contact the IoT Hub
+- In order to get the program to run when the Pi is started, do the following:
+  - sudo nano /etc/rc.local
+  - Just before the Exit command at the end, put in bash /home/pi/Control/Control &
+  - Press Ctrl + S then Ctrl + X
+  - restart the raspberry pi
 
 ## Operation
 

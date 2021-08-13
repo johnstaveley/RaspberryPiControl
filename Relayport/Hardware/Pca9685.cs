@@ -21,7 +21,7 @@ namespace Control.Hardware
     /// Version 2015.12.27.0
     /// Developed by: Chris Leavitt.
     /// </remarks>
-    public class PwmDriver
+    public class Pca9685
     {
 
         #region " Fields "
@@ -245,7 +245,7 @@ namespace Control.Hardware
         /// <summary>
         /// Creates a new instance of the object.
         /// </summary>
-        public PwmDriver(){
+        public Pca9685(){
 
             _i2C = Pi.I2C.AddDevice(DefaultI2CAddress);
             // Set default configuration to ensure a known state.

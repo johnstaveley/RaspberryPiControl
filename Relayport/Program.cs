@@ -12,8 +12,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Iot.Device.Pwm;
 using Unosquare.RaspberryIO;
+using Unosquare.RaspberryIO.Peripherals;
 using Unosquare.WiringPi;
+using Pca9685 = Control.Hardware.Pca9685;
 
 namespace Control
 {
@@ -21,11 +24,11 @@ namespace Control
     {
         static SoftwarePwmChannel _servo1;
         static FourRelayBoard _fourRelayBoard;
-        static PwmDriver _pwmDriver;
+        static Pca9685 _pwmDriver;
         static Lcd1602 _lcd;
         static bool ledState1;
         static System.Device.Gpio.GpioController _controller;
-        static Ads1X15 _ads;
+        static ADS1115 _ads;
         static int _inputPin;
         static int _outputPin1;
         static int _outputPin2;
@@ -91,7 +94,7 @@ namespace Control
             _controller.Write(_outputPin3, PinValue.Low);
 
             Console.WriteLine("Setting up Pwm Driver");
-            _pwmDriver = new PwmDriver();
+            _pwmDriver = new Pca9685();
             _pwmDriver.ResetDevice();
             Thread.Sleep(1000);
             Console.WriteLine("Pwm rate");
@@ -100,7 +103,7 @@ namespace Control
             _pwmDriver.SetAllCall(true);
 
             Console.WriteLine("Starting Ads");
-            _ads = new Ads1X15();
+            _ads = new ADS1115();
 
             Console.WriteLine("Setting up IoT Hub");
             var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
@@ -174,8 +177,8 @@ namespace Control
                         message = $"GetInput: Value is {inputResult}";
                         break;
                     case "GetAnalogue":
-                        var analogueChannel = (AdsChannel) (int) controlAction.Number;
-                        var analogueResult = _ads.ReadAdc(analogueChannel);
+                        var analogueChannel = (byte) controlAction.Number;
+                        var analogueResult = _ads.ReadChannel(analogueChannel);
                         status = 200;
                         message = $"GetAnalogue: Value is {analogueResult}";
                         break;
@@ -239,10 +242,10 @@ namespace Control
                             {
                                 var pwmMessage = pwmNumber == -1 ? "All" : pwmNumber.ToString();
                                 ConsoleHelper.WriteGreenMessage($"Setting pwm {pwmMessage} to value {controlAction.Value}");
-                                PwmDriver.PwmChannel channel = PwmDriver.PwmChannel.ALL;
+                                Pca9685.PwmChannel channel = Pca9685.PwmChannel.ALL;
                                 if (pwmNumber >= 0)
                                 {
-                                    channel = (PwmDriver.PwmChannel)((int)(controlAction.Number));
+                                    channel = (Pca9685.PwmChannel)((int)(controlAction.Number));
                                 }
                                 _pwmDriver.SetDutyCycle(channel, controlAction.Value * 100);
                             }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 
 namespace Control.Model
@@ -9,7 +11,7 @@ namespace Control.Model
         public AppConfiguration()
         {
             var config = new ConfigurationBuilder()
-                .SetBasePath(Environment.CurrentDirectory)
+                .SetBasePath(new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName)
                 .AddJsonFile("appsettings.json", true, true)
                 .Build();
 
