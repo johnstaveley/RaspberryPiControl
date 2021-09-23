@@ -7,7 +7,7 @@ Hardware includes:
 * PWM Devices hub can control up to 16 servos including continuous and angular servos
 * Analogue to Digital hub ADS1115 with programmable gain
 
-## Setup
+## Device Setup
 
 ![Picture of the Raspberry Pi set up with hardware](https://github.com/johnstaveley/RaspberryPiControl/blob/master/PictureOfRaspberryPiSetup.jpg "Picture of the raspberry pi setup with hardware")
 
@@ -20,7 +20,7 @@ Hardware includes:
 - Connect Pi and relay board to 5V 3A supply
 - Mounting components on Din rail is optional but just helps to make things tidier
 - In Azure. Iot Hub and go to the following blades:
-  - Shared access policy. For device and put in IoTHubConnectionString 
+  - Shared access policy. For DEVICE and put in IoTHubConnectionString 
   - IoT Devices. Add your Raspberry Pi
   - Networking. Don't put in IP restrictions if you want your azure function to be able to contact the IoT Hub
 - In order to get the program to run when the Pi is started, do the following:
@@ -28,6 +28,10 @@ Hardware includes:
   - Just before the Exit command at the end, put in bash /home/pi/Control/Control &
   - Press Ctrl + S then Ctrl + X
   - restart the raspberry pi
+
+## Blazor App Setup
+
+- Shared access policy. For SERVICE and put in IoTHubConnectionString 
 
 ## Operation
 

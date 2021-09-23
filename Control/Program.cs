@@ -1,4 +1,5 @@
-﻿using Control.Hardware;
+﻿using Common;
+using Control.Hardware;
 using Control.Model;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
@@ -12,7 +13,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Iot.Device.Pwm;
 using Unosquare.RaspberryIO;
 using Unosquare.RaspberryIO.Peripherals;
 using Unosquare.WiringPi;
@@ -23,6 +23,7 @@ namespace Control
     class Program
     {
         static SoftwarePwmChannel _servo1;
+        static DeviceClient _deviceClient;
         static FourRelayBoard _fourRelayBoard;
         static Pca9685 _pwmDriver;
         static Lcd1602 _lcd;
@@ -68,7 +69,7 @@ namespace Control
             var configuration = new AppConfiguration();
             if (configuration.IoTHubConnectionString == "CHANGEME")
             {
-                Console.WriteLine("Invalid configuration settings");
+                Console.WriteLine("Invalid IoT Hub configuration settings");
                 return;
             }
 
@@ -85,13 +86,10 @@ namespace Control
             _outputPin3 = 16; // board pin 36
             _inputPin = 22; // board pin 15
             _controller = new();
-            _controller.OpenPin(_outputPin1, PinMode.Output);
-            _controller.OpenPin(_outputPin2, PinMode.Output);
-            _controller.OpenPin(_outputPin3, PinMode.Output);
+            _controller.OpenPin(_outputPin1, PinMode.Output, PinValue.Low);
+            _controller.OpenPin(_outputPin2, PinMode.Output, PinValue.Low);
+            _controller.OpenPin(_outputPin3, PinMode.Output, PinValue.Low);
             _controller.OpenPin(_inputPin, PinMode.Input);
-            _controller.Write(_outputPin1, PinValue.Low);
-            _controller.Write(_outputPin2, PinValue.Low);
-            _controller.Write(_outputPin3, PinValue.Low);
 
             Console.WriteLine("Setting up Pwm Driver");
             _pwmDriver = new Pca9685();
@@ -106,12 +104,13 @@ namespace Control
             _ads = new ADS1115();
 
             Console.WriteLine("Setting up IoT Hub");
-            var deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
-            await deviceClient.SetMethodHandlerAsync("ControlAction", BoardAction, null);
-            var twin = await deviceClient.GetTwinAsync();
+            _deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
+            await _deviceClient.SetMethodHandlerAsync(Consts.MethodName, BoardAction, null);
+            
+            var twin = await _deviceClient.GetTwinAsync();
             Console.WriteLine("Successfully got twin for the device", ConsoleColor.Green);
             //if (twin != null) Console.WriteLine(twin.ToString(), ConsoleColor.Green);
-            await StartListeningForDesiredPropertyChanges(deviceClient);
+            await StartListeningForDesiredPropertyChanges(_deviceClient);
             Console.WriteLine("Setting up board");
             _lcd = new Lcd1602();
             _lcd.Init();
@@ -138,7 +137,7 @@ namespace Control
             Console.ReadKey();
         }
 
-        private static Task<MethodResponse> BoardAction(MethodRequest methodRequest, object userContext)
+        private static async Task<MethodResponse> BoardAction(MethodRequest methodRequest, object userContext)
         {
             try
             {
@@ -175,12 +174,16 @@ namespace Control
                         var inputResult = _controller.Read(_inputPin);
                         status = 200;
                         message = $"GetInput: Value is {inputResult}";
+                        Message deviceMessage1 = new Message(Encoding.ASCII.GetBytes(message));
+                        await _deviceClient.SendEventAsync(deviceMessage1);
                         break;
                     case "GetAnalogue":
                         var analogueChannel = (byte) controlAction.Number;
                         var analogueResult = _ads.ReadChannel(analogueChannel);
                         status = 200;
                         message = $"GetAnalogue: Value is {analogueResult}";
+                        Message deviceMessage2 = new Message(Encoding.ASCII.GetBytes(message));
+                        await _deviceClient.SendEventAsync(deviceMessage2);
                         break;
                     case "SetOutput":
                         if (!(controlAction.Number is -1 or 1 or 2 or 3))
@@ -309,6 +312,8 @@ namespace Control
                             status = 400;
                             message = $"GetRelay - Relay address {getRelayNumber} unknown. Must be 1 to 4 or -1 for all relays";
                         }
+                        Message deviceMessage3 = new Message(Encoding.ASCII.GetBytes(message));
+                        await _deviceClient.SendEventAsync(deviceMessage3);
                         break;
                     case "SetRelay":
                         var relay = (int)controlAction.Number;
@@ -345,14 +350,14 @@ namespace Control
 
                 // Acknowledge the direct method call with a 200 success message.
                 string result = "{\"result\":\"Executed direct method: " + methodRequest.Name + "\",\"message\":\"" + message + "\"}";
-                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), status));
+                return new MethodResponse(Encoding.UTF8.GetBytes(result), status);
             }
             catch (Exception exception)
             {
                 // Acknowledge the direct method call with a 400 error message.
                 string result = "{\"result\":\"Exception: " + exception.Message + "\"}";
                 ConsoleHelper.WriteRedMessage("Direct method failed: " + exception.Message);
-                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(result), 400));
+                return new MethodResponse(Encoding.UTF8.GetBytes(result), 400);
             }
 
         }

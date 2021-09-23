@@ -1,4 +1,4 @@
-﻿namespace Control.Model
+﻿namespace Common
 {
     public class ControlAction
     {
