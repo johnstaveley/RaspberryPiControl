@@ -42,7 +42,7 @@ namespace UI.Pages
             Operations.AddRange(Consts.OperationList);
             Operations.Insert(0, "(Please Select)");
             Outputs = new List<string> { "1", "2", "3", "All" };
-            Pwms = Enumerable.Range(0, 15).ToList();
+            Pwms = Enumerable.Range(0, 16).ToList();
             Relays = new List<string> { "1", "2", "3", "4", "All" };
             SelectedOperation = "(Please Select)";
             SelectedRelay = "1";

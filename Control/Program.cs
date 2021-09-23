@@ -105,7 +105,7 @@ namespace Control
 
             Console.WriteLine("Setting up IoT Hub");
             _deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
-            await _deviceClient.SetMethodHandlerAsync(Consts.MethodName, BoardAction, null);
+            await _deviceClient.SetMethodHandlerAsync(Consts.MethodName, ActionMethod, null);
             
             var twin = await _deviceClient.GetTwinAsync();
             Console.WriteLine("Successfully got twin for the device", ConsoleColor.Green);
@@ -137,7 +137,7 @@ namespace Control
             Console.ReadKey();
         }
 
-        private static async Task<MethodResponse> BoardAction(MethodRequest methodRequest, object userContext)
+        private static async Task<MethodResponse> ActionMethod(MethodRequest methodRequest, object userContext)
         {
             try
             {
@@ -152,16 +152,14 @@ namespace Control
                         var inputResult = _controller.Read(_inputPin);
                         status = 200;
                         message = $"GetInput: Value is {inputResult}";
-                        Message deviceMessage1 = new Message(Encoding.ASCII.GetBytes(message));
-                        await _deviceClient.SendEventAsync(deviceMessage1);
+                        await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
                         break;
                     case "GetAnalogue":
                         var analogueChannel = (byte) controlAction.Number;
                         var analogueResult = _ads.ReadChannel(analogueChannel);
                         status = 200;
                         message = $"GetAnalogue: Value is {analogueResult}";
-                        Message deviceMessage2 = new Message(Encoding.ASCII.GetBytes(message));
-                        await _deviceClient.SendEventAsync(deviceMessage2);
+                        await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
                         break;
                     case Consts.Operations.SetOutput:
                         if (!(controlAction.Number is -1 or 1 or 2 or 3))
@@ -290,8 +288,7 @@ namespace Control
                             status = 400;
                             message = $"GetRelay - Relay address {getRelayNumber} unknown. Must be 1 to 4 or -1 for all relays";
                         }
-                        Message deviceMessage = new Message(Encoding.ASCII.GetBytes(message));
-                        await _deviceClient.SendEventAsync(deviceMessage);
+                        await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
                         break;
                     case Consts.Operations.SetRelay:
                         var relay = (int)controlAction.Number;
