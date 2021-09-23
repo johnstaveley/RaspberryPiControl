@@ -18,7 +18,7 @@ namespace UI.Pages
         public List<int> Pwms { get; set; }
         public List<string> Outputs { get; set; }
         public List<string> Relays { get; set; }
-        public string SelectedOnOff { get; set; }
+        public bool SelectedOnOff { get; set; }
         public string SelectedOperation = "(Please Select)";
         public int SelectedOutput { get; set; } = 1;
         public int SelectedPwm { get; set; }
@@ -37,16 +37,16 @@ namespace UI.Pages
 
         protected override Task OnInitializedAsync()
         {
-            OnOff = new List<string> { "On", "Off" };
+            OnOff = new List<string> { "Off", "On" };
             Operations = new List<string>();
             Operations.AddRange(Consts.OperationList);
             Operations.Insert(0, "(Please Select)");
             Outputs = new List<string> { "1", "2", "3", "All" };
             Pwms = Enumerable.Range(0, 15).ToList();
             Relays = new List<string> { "1", "2", "3", "4", "All" };
-            SelectedOnOff = "Off";
             SelectedOperation = "(Please Select)";
             SelectedRelay = "1";
+            SelectedOnOff = false;
             ChangeDisplay();
             return base.OnInitializedAsync();
         }
@@ -66,19 +66,23 @@ namespace UI.Pages
                 string text = "";
                 switch (SelectedOperation)
                 {
+                    case Consts.Operations.GetRelay:
+                        if (SelectedRelay == "All") SelectedRelay = "-1";
+                        number = int.Parse(SelectedRelay);
+                        break;
                     case Consts.Operations.SetOutput:
                         number = SelectedOutput;
-                        value = SelectedOnOff == "On" ? 1 : 0;
+                        value = SelectedOnOff ? 1 : 0;
                         break;
                     case Consts.Operations.SetText:
-                        number = 2;
-                        value = 0;
+                        number = 2; // Row
+                        value = 0; // Offset
                         text = SelectedText;
                         break;
                     case Consts.Operations.SetRelay:
                         if (SelectedRelay == "All") SelectedRelay = "-1";
                         number = int.Parse(SelectedRelay);
-                        value = SelectedOnOff == "On" ? 1 : 0;
+                        value = SelectedOnOff ? 1 : 0;
                         break;
                     case Consts.Operations.SetPwm:
                         number = SelectedPwm;
@@ -111,6 +115,9 @@ namespace UI.Pages
             HideValue = true;
             switch (operation)
             {
+                case Consts.Operations.GetRelay:
+                    HideRelay = false;
+                    break;
                 case Consts.Operations.SetOutput:
                     HideOnOff = false;
                     HideOutputs = false;
@@ -133,7 +140,7 @@ namespace UI.Pages
         }
         public void ChangeOnOff(ChangeEventArgs e)
         {
-            SelectedOnOff = e.Value.ToString();
+            SelectedOnOff = e.Value.ToString() == "On";
         }
         public void ChangeOperation(ChangeEventArgs e)
         {

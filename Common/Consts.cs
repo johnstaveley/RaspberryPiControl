@@ -6,12 +6,21 @@
 
         public static class Operations
         {
+            public const string GetInput = "GetInput";
+            public const string GetRelay = "GetRelay";
             public const string SetOutput = "SetOutput";
             public const string SetPwm = "SetPwm";
             public const string SetRelay = "SetRelay";
             public const string SetText = "SetText";
         }
 
-        public static string[] OperationList = new[] { Operations.SetOutput, Operations.SetPwm, Operations.SetRelay, Operations.SetText };
+        public static string[] OperationList = new[] { 
+            Operations.GetInput, 
+            Operations.GetRelay, 
+            Operations.SetOutput, 
+            Operations.SetPwm, 
+            Operations.SetRelay, 
+            Operations.SetText
+        };
     }
 }

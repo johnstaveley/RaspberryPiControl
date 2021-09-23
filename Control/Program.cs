@@ -148,29 +148,7 @@ namespace Control
                 string message = "";
                 switch (controlAction.Method)
                 {
-                    //case "LedGrid":
-                    //    var action = (int)controlAction.Number;
-                    //    switch (action)
-                    //    {
-                    //        case 1:
-                    //            _matrix.Clear();
-                    //            _matrix.DrawBitmap(0, 0, _smile, 8, 8, LedGrid.LedGreen);
-                    //            _matrix.WriteDisplay();
-                    //            break;
-                    //        case 2:
-                    //            _matrix.Clear();
-                    //            _matrix.DrawBitmap(0, 0, _neutral, 8, 8, LedGrid.LedYellow);
-                    //            _matrix.WriteDisplay();
-                    //            break;
-                    //        case 3:
-                    //            _matrix.Clear();
-                    //            _matrix.DrawBitmap(0, 0, _frown, 8, 8, LedGrid.LedRed);
-                    //            _matrix.WriteDisplay();
-                    //            break;
-                    //    }
-
-                    //    break;
-                    case "GetInput":
+                    case Consts.Operations.GetInput:
                         var inputResult = _controller.Read(_inputPin);
                         status = 200;
                         message = $"GetInput: Value is {inputResult}";
@@ -185,7 +163,7 @@ namespace Control
                         Message deviceMessage2 = new Message(Encoding.ASCII.GetBytes(message));
                         await _deviceClient.SendEventAsync(deviceMessage2);
                         break;
-                    case "SetOutput":
+                    case Consts.Operations.SetOutput:
                         if (!(controlAction.Number is -1 or 1 or 2 or 3))
                         {
                             status = 400;
@@ -216,7 +194,7 @@ namespace Control
                                 break;
                         }
                         break;
-                    case "SetText":
+                    case Consts.Operations.SetText:
                         if (controlAction.Number == 0) controlAction.Number = 1;
                         if (!(controlAction.Number is 1 or 2))
                         {
@@ -232,7 +210,7 @@ namespace Control
                             _lcd.Write(0, (int)controlAction.Number - 1, displayMessage);
                         }
                         break;
-                    case "SetPwm":
+                    case Consts.Operations.SetPwm:
                         if (!(controlAction.Value is >= 0 and <= 1))
                         {
                             status = 400;
@@ -287,8 +265,8 @@ namespace Control
                             _servo1.DutyCycle = 0;
                         }
                         break;
-                    case "GetRelay":
-                        var getRelayNumber = (int)controlAction.Number;
+                    case Consts.Operations.GetRelay:
+                        var getRelayNumber = (int) controlAction.Number;
                         if (getRelayNumber == -1)
                         {
                             ConsoleHelper.WriteGreenMessage($"Getting value of all relays");
@@ -312,10 +290,10 @@ namespace Control
                             status = 400;
                             message = $"GetRelay - Relay address {getRelayNumber} unknown. Must be 1 to 4 or -1 for all relays";
                         }
-                        Message deviceMessage3 = new Message(Encoding.ASCII.GetBytes(message));
-                        await _deviceClient.SendEventAsync(deviceMessage3);
+                        Message deviceMessage = new Message(Encoding.ASCII.GetBytes(message));
+                        await _deviceClient.SendEventAsync(deviceMessage);
                         break;
-                    case "SetRelay":
+                    case Consts.Operations.SetRelay:
                         var relay = (int)controlAction.Number;
                         if (relay == -1)
                         {
@@ -342,7 +320,7 @@ namespace Control
                         }
                         break;
                     default:
-                        message = $"Unknown method: {controlAction.Method}. Must be either 'Relay' or 'Servo'";
+                        message = $"Unknown method: {controlAction.Method}. Must be one of {string.Join(", ", Consts.OperationList)}";
                         ConsoleHelper.WriteRedMessage(message);
                         status = 400;
                         break;

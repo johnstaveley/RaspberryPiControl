@@ -1,4 +1,5 @@
 ﻿using Common;
+using Common.Model;
 using Control.Model;
 using Microsoft.Azure.Devices;
 using System;
@@ -52,7 +53,11 @@ namespace UI.Services
                 var payload = JsonSerializer.Serialize(controlAction);
                 deviceMethod.SetPayloadJson(payload);
                 var result = await _serviceClient.InvokeDeviceMethodAsync(_deviceId, deviceMethod);
-                responseModel.Message = result.Status + " " + result.GetPayloadAsJson();
+                if (result.Status == 200) {
+                    responseModel.Success = true;
+                }
+                var methodResponse = JsonSerializer.Deserialize<MethodResponse>(result.GetPayloadAsJson());
+                responseModel.Message = methodResponse.Message;
             }
             catch (Exception exception)
             {
