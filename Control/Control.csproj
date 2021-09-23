@@ -10,6 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Hardware\AdafruitGfx.cs" />
+    <Compile Remove="Hardware\IoTExpander.cs" />
+    <Compile Remove="Hardware\LedBackPack.cs" />
+    <Compile Remove="Hardware\LedGrid.cs" />
+    <Compile Remove="Model\AdcEnums.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Hardware\LedGrid.cs~RF3c886b0.TMP" />
   </ItemGroup>
 
