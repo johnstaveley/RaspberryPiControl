@@ -6,6 +6,7 @@
 
         public static class Operations
         {
+            public const string GetAnalogue = "GetAnalogue";
             public const string GetInput = "GetInput";
             public const string GetRelay = "GetRelay";
             public const string SetOutput = "SetOutput";

@@ -142,6 +142,7 @@ namespace Control
             try
             {
                 var data = methodRequest.DataAsJson;
+                Console.WriteLine();
                 ConsoleHelper.WriteGreenMessage($"Received: {data} from direct method {methodRequest.Name}");
                 var controlAction = JsonConvert.DeserializeObject<ControlAction>(data);
                 int status = 200;
@@ -154,7 +155,7 @@ namespace Control
                         message = $"GetInput: Value is {inputResult}";
                         await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
                         break;
-                    case "GetAnalogue":
+                    case Consts.Operations.GetAnalogue:
                         var analogueChannel = (byte) controlAction.Number;
                         var analogueResult = _ads.ReadChannel(analogueChannel);
                         status = 200;
@@ -162,7 +163,7 @@ namespace Control
                         await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
                         break;
                     case Consts.Operations.SetOutput:
-                        if (!(controlAction.Number is -1 or 1 or 2 or 3))
+                        if (!(controlAction.Number is -1 or -2 or 1 or 2 or 3))
                         {
                             status = 400;
                             message = "SetOutput Number must be 1 to 3 to indicate which output to target";
@@ -176,6 +177,24 @@ namespace Control
                         var outputValue = (int)controlAction.Value;
                         switch (outputNumber)
                         {
+                            case -2:
+                                for (int i = 0; i<3; i++) {
+                                    _controller.Write(_outputPin1, 1);
+                                    Thread.Sleep(2000);
+                                    _controller.Write(_outputPin1, 0);
+                                    _controller.Write(_outputPin2, 1);
+                                    Thread.Sleep(2000);
+                                    _controller.Write(_outputPin2, 0);
+                                    _controller.Write(_outputPin3, 1);
+                                    Thread.Sleep(2000);
+                                    _controller.Write(_outputPin1, 1);
+                                    _controller.Write(_outputPin2, 1);
+                                    Thread.Sleep(2000);
+                                    _controller.Write(_outputPin1, 0);
+                                    _controller.Write(_outputPin2, 0);
+                                    _controller.Write(_outputPin3, 0);
+                                }
+                                break;
                             case -1:
                                 _controller.Write(_outputPin1, outputValue);
                                 _controller.Write(_outputPin2, outputValue);
@@ -190,22 +209,6 @@ namespace Control
                             case 3:
                                 _controller.Write(_outputPin3, outputValue);
                                 break;
-                        }
-                        break;
-                    case Consts.Operations.SetText:
-                        if (controlAction.Number == 0) controlAction.Number = 1;
-                        if (!(controlAction.Number is 1 or 2))
-                        {
-                            status = 400;
-                            message = "SetText Number must be 1 or 2 to indicate either the first or second line of the display";
-                        }
-                        else
-                        {
-                            var xCoordinate = (int)controlAction.Value;
-                            var displayMessage = controlAction.Message
-                                .PadLeft(controlAction.Message.Length + xCoordinate, ' ')
-                                .PadRight(20 - controlAction.Message.Length - xCoordinate, ' ');
-                            _lcd.Write(0, (int)controlAction.Number - 1, displayMessage);
                         }
                         break;
                     case Consts.Operations.SetPwm:
@@ -314,6 +317,45 @@ namespace Control
                         {
                             status = 400;
                             message = $"SetRelay - Relay address {relay} unknown. Must be 1 to 4 or -1 for all relays";
+                        }
+                        break;
+                    case Consts.Operations.SetText:
+                        if (controlAction.Number == 0) controlAction.Number = 1;
+                        if (!(controlAction.Number is 1 or 2 or -1))
+                        {
+                            status = 400;
+                            message = "SetText Number must be 1 or 2 to indicate either the first or second line of the display";
+                        }
+                        else
+                        {
+                           var screenWidth = 16;
+                            var clearScreen = string.Concat(Enumerable.Repeat(" ", screenWidth));
+                            if (controlAction.Number is 1 or 2) {
+                                _lcd.Write(0, (int) controlAction.Number - 1, clearScreen);
+                                var xCoordinate = (int)controlAction.Value;
+                                var displayMessage = controlAction.Message
+                                    .PadLeft(controlAction.Message.Length + xCoordinate, ' ')
+                                    .PadRight(20 - controlAction.Message.Length - xCoordinate, ' ');
+                                _lcd.Write(0, (int) controlAction.Number - 1, displayMessage);
+                            } else
+                            {
+                                var textTopLine = "I Love .Net";
+                                var textBottomLine = "on my Pi!";
+                                _lcd.Write(0, 0, clearScreen);
+                                _lcd.Write(0, 1, clearScreen);
+                                Thread.Sleep(50);
+                                for (var j = 0; j < 2; j++) {
+                                    for (var i = 0; i < screenWidth - Math.Max(textTopLine.Length, textBottomLine.Length) + 3; i++)
+                                        {
+                                        _lcd.Write(0, 0, clearScreen);
+                                        _lcd.Write(0, 1, clearScreen);
+                                        Thread.Sleep(10);
+                                        _lcd.Write(i, 0, textTopLine);
+                                        _lcd.Write(i, 1, textBottomLine);
+                                        Thread.Sleep(750);
+                                        }
+                                }
+                            }
                         }
                         break;
                     default:

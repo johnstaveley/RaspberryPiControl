@@ -20,6 +20,15 @@
         }
     </select>
 </div>
+<div class="form-group row" hidden="@HideOutputs">
+    <label for="SelectedOutput" class="col-sm-3">Select an output:</label>
+    <select id="SelectedOutput" @onchange="ChangeOutput" class="form-control col-sm-3">
+        @foreach (var output in Outputs)
+        {
+        <option value='@output'>@output</option>
+        }
+    </select>
+</div>
 <div class="form-group row" hidden="@HideOnOff">
     <label for="SelectedOnOff" class="col-sm-3">Select a value to send:</label>
     <select id="SelectedOnOff" @onchange="ChangeOnOff" class="form-control col-sm-3">
@@ -29,21 +38,21 @@
         }
     </select>
 </div>
+<div class="form-group row" hidden="@HideTextDisplay">
+    <label for="SelectedPwm" class="col-sm-3">Select display type:</label>
+    <select id="SelectedPwm" @onchange="ChangeTextDisplay" class="form-control col-sm-3">
+        @foreach (var textDisplayType in TextDisplayTypes)
+        {
+        <option value='@textDisplayType'>@textDisplayType</option>
+        }
+    </select>
+</div>
 <div class="form-group row" hidden="@HideText">
     <label for="SelectedText" class="col-sm-3">Select text to display:</label>
     <input type="text" id="SelectedText" @onchange="ChangeText" class="form-control col-sm-3" />
 </div>
-<div class="form-group row" hidden="@HideOutputs">
-    <label for="SelectedOutput" class="col-sm-3">Select an output:</label>
-    <select id="SelectedOutput" @onchange="ChangeOutput" class="form-control col-sm-3">
-        @foreach (var output in Outputs)
-        {
-            <option value='@output'>@output</option>
-        }
-    </select>
-</div>
 <div class="form-group row" hidden="@HidePwm">
-    <label for="SelectedPwm" class="col-sm-3">Select a value to send:</label>
+    <label for="SelectedPwm" class="col-sm-3">Select Pwm Channel:</label>
     <select id="SelectedPwm" @onchange="ChangePwm" class="form-control col-sm-3">
         @foreach (var pwm in Pwms)
         {

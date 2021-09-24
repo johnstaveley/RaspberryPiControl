@@ -18,18 +18,21 @@ namespace UI.Pages
         public List<int> Pwms { get; set; }
         public List<string> Outputs { get; set; }
         public List<string> Relays { get; set; }
+        public List<string> TextDisplayTypes { get; set; }
         public bool SelectedOnOff { get; set; }
         public string SelectedOperation = "(Please Select)";
         public int SelectedOutput { get; set; } = 1;
         public int SelectedPwm { get; set; }
         public string SelectedRelay { get; set; }
         public string SelectedText { get; set; }
+        public int SelectedTextDisplay { get; set; }
         public double SelectedValue { get; set; }
         public bool HideOnOff { get; set; } = false;
         public bool HideOutputs { get; set; } = false;
         public bool HidePwm { get; set; } = false;
         public bool HideRelay { get; set; } = false;
         public bool HideText { get; set; } = false;
+        public bool HideTextDisplay { get; set; } = false;
         public bool HideValue { get; set; } = false;
 
         [Inject]
@@ -41,12 +44,13 @@ namespace UI.Pages
             Operations = new List<string>();
             Operations.AddRange(Consts.OperationList);
             Operations.Insert(0, "(Please Select)");
-            Outputs = new List<string> { "1", "2", "3", "All" };
+            Outputs = new List<string> { "1", "2", "3", "All", "Cycle" };
             Pwms = Enumerable.Range(0, 16).ToList();
             Relays = new List<string> { "1", "2", "3", "4", "All" };
             SelectedOperation = "(Please Select)";
             SelectedRelay = "1";
             SelectedOnOff = false;
+            TextDisplayTypes = new List<string> {"Top", "Bottom", "Demo"};
             ChangeDisplay();
             return base.OnInitializedAsync();
         }
@@ -75,7 +79,7 @@ namespace UI.Pages
                         value = SelectedOnOff ? 1 : 0;
                         break;
                     case Consts.Operations.SetText:
-                        number = 2; // Row
+                        number = SelectedTextDisplay; // Row number or demo
                         value = 0; // Offset
                         text = SelectedText;
                         break;
@@ -112,6 +116,7 @@ namespace UI.Pages
             HideOnOff = true;
             HideOutputs = true;
             HideText = true;
+            HideTextDisplay = true;
             HideValue = true;
             switch (operation)
             {
@@ -132,6 +137,7 @@ namespace UI.Pages
                     break;
                 case (Consts.Operations.SetText):
                     HideText = false;
+                    HideTextDisplay = false;
                     break;
                 default:
                     // Do nothing
@@ -149,10 +155,17 @@ namespace UI.Pages
         }
         public void ChangeOutput(ChangeEventArgs e)
         {
-            if (e.Value.ToString() == "All") {
-                SelectedOutput = -1;
-            } else {
-                SelectedOutput = int.Parse(e.Value.ToString());
+            switch (e.Value.ToString())
+            {
+                case "All":
+                    SelectedOutput = -1;
+                    break;
+                case "Cycle":
+                    SelectedOutput = -2;
+                    break;
+                default:
+                    SelectedOutput = int.Parse(e.Value.ToString());
+                    break;
             }
         }
         public void ChangePwm(ChangeEventArgs e)
@@ -166,6 +179,21 @@ namespace UI.Pages
         public void ChangeText(ChangeEventArgs e)
         {
             SelectedText = e.Value.ToString();
+        }
+        public void ChangeTextDisplay(ChangeEventArgs e)
+        {
+            switch (e.Value.ToString())
+            {
+                case "Top":
+                    SelectedTextDisplay = 1;
+                    break;
+                case "Bottom":
+                    SelectedTextDisplay = 2;
+                    break;
+                case "Demo":
+                    SelectedTextDisplay = -1;
+                    break;
+            }
         }
         public void ChangeValue(ChangeEventArgs e)
         {
