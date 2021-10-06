@@ -1,4 +1,5 @@
 ﻿using Common;
+using Common.Model;
 using Control.Hardware;
 using Control.Model;
 using Microsoft.Azure.Devices.Client;
@@ -106,7 +107,7 @@ namespace Control
             Console.WriteLine("Setting up IoT Hub");
             _deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
             await _deviceClient.SetMethodHandlerAsync(Consts.MethodName, ActionMethod, null);
-            
+                        
             var twin = await _deviceClient.GetTwinAsync();
             Console.WriteLine("Successfully got twin for the device", ConsoleColor.Green);
             //if (twin != null) Console.WriteLine(twin.ToString(), ConsoleColor.Green);
@@ -117,6 +118,12 @@ namespace Control
             _lcd.Clear();
             _lcd.Write(0, 0, "Pi Control");
             _lcd.Write(0, 1, "Started");
+
+            Console.WriteLine("Sending Device ready to IoT Hub");
+            var deviceResponse = new DeviceResponse(Consts.Operations.StartUp) { Message = $"Device {configuration.DeviceId} ready at {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}" };
+            var message = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(deviceResponse)));
+            await _deviceClient.SendEventAsync(message);
+
             try
             {
                 Console.WriteLine("Starting Raspberry Pi control, send messages via IoT Explorer to set values");
@@ -153,14 +160,14 @@ namespace Control
                         var inputResult = _controller.Read(_inputPin);
                         status = 200;
                         message = $"GetInput: Value is {inputResult}";
-                        await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
+                        await _deviceClient.SendEventAsync(new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new DeviceResponse(Consts.Operations.GetInput) { Message = message } ))));
                         break;
                     case Consts.Operations.GetAnalogue:
                         var analogueChannel = (byte) controlAction.Number;
                         var analogueResult = _ads.ReadChannel(analogueChannel);
                         status = 200;
                         message = $"GetAnalogue: Value is {analogueResult}";
-                        await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
+                        await _deviceClient.SendEventAsync(new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new DeviceResponse(Consts.Operations.GetAnalogue) { Message = message } ))));
                         break;
                     case Consts.Operations.SetOutput:
                         if (!(controlAction.Number is -1 or -2 or 1 or 2 or 3))
@@ -291,7 +298,7 @@ namespace Control
                             status = 400;
                             message = $"GetRelay - Relay address {getRelayNumber} unknown. Must be 1 to 4 or -1 for all relays";
                         }
-                        await _deviceClient.SendEventAsync(new Message(Encoding.ASCII.GetBytes(message)));
+                        await _deviceClient.SendEventAsync(new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new DeviceResponse(controlAction.Method) { Message = message } ))));
                         break;
                     case Consts.Operations.SetRelay:
                         var relay = (int)controlAction.Number;

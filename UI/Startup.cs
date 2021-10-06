@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using UI.Model;
 using UI.Services;
 
 namespace UI
@@ -22,6 +23,8 @@ namespace UI
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
+            services.AddSingleton<IAppConfiguration, AppConfiguration>();
+            services.AddSingleton<IIotHubService, IotHubService>();
             services.AddSingleton<IThingService, ThingService>();
         }
 

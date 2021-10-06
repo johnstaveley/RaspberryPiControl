@@ -14,22 +14,15 @@ namespace UI.Services
     /// </summary>
     public class ThingService : IThingService, IDisposable
     {
+        IAppConfiguration _appConfiguration;
         ServiceClient _serviceClient;
         string _deviceId;
 
-        public ThingService()
+        public ThingService(IAppConfiguration appConfiguration)
         {
-            var configuration = new AppConfiguration();
-            if (configuration.DeviceId == "CHANGEME")
-            {
-                throw new Exception("Invalid IoT Device configuration settings");
-            }
-            _deviceId = configuration.DeviceId;
-            if (configuration.IoTHubConnectionString == "CHANGEME")
-            {
-                throw new Exception("Invalid IoT Hub configuration settings");
-            }
-            _serviceClient = ServiceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
+            _appConfiguration = appConfiguration ?? throw new ArgumentNullException(nameof(AppConfiguration));
+            _deviceId = _appConfiguration.DeviceId;
+            _serviceClient = ServiceClient.CreateFromConnectionString(_appConfiguration.IoTHubConnectionString);
         }
 
         public void Dispose()
@@ -56,7 +49,7 @@ namespace UI.Services
                 if (result.Status == 200) {
                     responseModel.Success = true;
                 }
-                var methodResponse = JsonSerializer.Deserialize<MethodResponse>(result.GetPayloadAsJson());
+                var methodResponse = JsonSerializer.Deserialize<ControlActionResponse>(result.GetPayloadAsJson());
                 responseModel.Message = methodResponse.Message;
             }
             catch (Exception exception)

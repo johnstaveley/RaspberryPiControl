@@ -2,7 +2,7 @@
 
 namespace Common.Model
 {
-    public class MethodResponse
+    public class ControlActionResponse
     {
         [JsonPropertyName("result")]
         public string Result {get; set;}

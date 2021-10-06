@@ -6,6 +6,13 @@ namespace Control.Model
 {
     public class AppConfiguration
     {
+        /// <summary>
+        /// The device Id as defined in Azure IoTHub
+        /// </summary>
+        public string DeviceId { get; set; }
+        /// <summary>
+        /// Azure IoT Hub DEVICE connection string
+        /// </summary>
         public string IoTHubConnectionString { get; set; }
         public AppConfiguration()
         {
@@ -16,7 +23,7 @@ namespace Control.Model
                 .AddJsonFile("appsettings.Production.json", optional: true, reloadOnChange: true)
                 .AddUserSecrets(assembly, optional: false)
                 .Build();
-
+            DeviceId = config["DeviceId"];
             IoTHubConnectionString = config["IoTHubConnectionString"];
         }
     }

@@ -5,7 +5,6 @@ Hardware includes:
 * A 4 relay header board to control a lamp and solenoid
 * LCD Display LCD1602
 * PWM Devices hub can control up to 16 servos including continuous and angular servos
-* Analogue to Digital hub ADS1115 with programmable gain
 
 ## Device Setup
 

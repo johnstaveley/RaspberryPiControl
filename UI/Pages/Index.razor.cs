@@ -4,12 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UI.Model;
 using UI.Services;
 
 namespace UI.Pages
 {
     public partial class Index
     {
+        public string EventMessage { get; set; }
+        public string EventMessageClass { get; set; }
         public string Message { get; set; }
         public string MessageClass { get; set; }
         public string OnOffSelected { get; set; }
@@ -34,7 +37,8 @@ namespace UI.Pages
         public bool HideText { get; set; } = false;
         public bool HideTextDisplay { get; set; } = false;
         public bool HideValue { get; set; } = false;
-
+        [Inject]
+        protected IIotHubService IotHubService { get; set; }
         [Inject]
         protected IThingService ThingService { get; set; }
 
@@ -52,7 +56,14 @@ namespace UI.Pages
             SelectedOnOff = false;
             TextDisplayTypes = new List<string> {"Top", "Bottom", "Demo"};
             ChangeDisplay();
+            IotHubService.OnEventReceived +=  (sender, args) => { EventReceived((DeviceEventArgs) args); };
             return base.OnInitializedAsync();
+        }
+
+        private void EventReceived(DeviceEventArgs eventArgs)
+        {
+            EventMessageClass = "alert-info";
+            EventMessage = $"{eventArgs.EventDate:dd/MM/yyyy HH:mm:ss} {eventArgs.Method}: {eventArgs.Message}";
         }
 
         public async Task SendMessage()
