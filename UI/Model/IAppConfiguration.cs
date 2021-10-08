@@ -2,6 +2,9 @@
 {
     public interface IAppConfiguration
     {
+        /// <summary>
+        /// Container name in blob storage, must be lowercase
+        /// </summary>
         string BlobContainerName { get; set; }
         string BlobStorageConnectionString { get; set; }
         /// <summary>

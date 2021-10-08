@@ -3,17 +3,20 @@ using System.Text.Json.Serialization;
 
 namespace Common.Model
 {
-    public class DeviceResponse
+    /// <summary>
+    /// Class for sending messages from the device to event hubs, and there on to any subscribers
+    /// </summary>
+    public class DeviceEvent
     {
-        public string Method { get; private set; }
+        public string Event { get; private set; }
         [JsonPropertyName("message")]
         public string Message { get; set; }
         public DateTime EventDate {get; set;}
-        public DeviceResponse(string method)
+        public DeviceEvent(string method)
         {
             EventDate = DateTime.UtcNow;
             Message = "";
-            Method = method;
+            Event = method;
         }
     }
 }

@@ -13,7 +13,13 @@
             public const string SetPwm = "SetPwm";
             public const string SetRelay = "SetRelay";
             public const string SetText = "SetText";
+        }
+
+        public static class Events
+        {
+            public const string Button = "Button";
             public const string StartUp = "StartUp";
+            public const string IsAlive = "IsAwake";
         }
 
         public static string[] OperationList = new[] { 

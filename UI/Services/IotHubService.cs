@@ -23,24 +23,26 @@ namespace UI.Services
         {
             _appConfiguration = appConfiguration ?? throw new ArgumentNullException(nameof(AppConfiguration));
 
-            // Create a blob container client that the event processor will use 
+            // Create a blob container client that the event processor will use to track its read position in event hub
             _storageClient = new BlobContainerClient(_appConfiguration.BlobStorageConnectionString, _appConfiguration.BlobContainerName);
+            _storageClient.CreateIfNotExists();
 
             string consumerGroup = EventHubConsumerClient.DefaultConsumerGroupName;
-            eventProcessor = new EventProcessorClient(_storageClient, consumerGroup, _appConfiguration.EventHubConnectionString, _appConfiguration.EventHubName);
+            eventProcessor = new EventProcessorClient(_storageClient, consumerGroup, _appConfiguration.EventHubConnectionString, 
+                _appConfiguration.EventHubName);
 
             // Register handlers for processing events and handling errors
             eventProcessor.ProcessEventAsync += ProcessEventHandler;
             eventProcessor.ProcessErrorAsync += ProcessErrorHandler;
+            eventProcessor.StartProcessing();
         }
 
         public async Task ProcessEventHandler(ProcessEventArgs eventArgs)
         {
-            // Write the body of the event to the console window
             var eventString = Encoding.UTF8.GetString(eventArgs.Data.Body.ToArray());
             Console.WriteLine($"\tReceived event: {eventString}");
-            var eventData = JsonConvert.DeserializeObject<DeviceResponse>(eventString);
-            var deviceEventArgs = new DeviceEventArgs() { EventDate = eventData.EventDate, Message = eventData.Message, Method = eventData.Method };
+            var eventData = JsonConvert.DeserializeObject<DeviceEvent>(eventString);
+            var deviceEventArgs = new DeviceEventArgs() { EventDate = eventData.EventDate, Message = eventData.Message, Method = eventData.Event };
             OnEventReceived(this, deviceEventArgs);
 
             // Update checkpoint in the blob storage so that the app receives only new events the next time it's run

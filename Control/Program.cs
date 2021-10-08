@@ -90,7 +90,7 @@ namespace Control
             _controller.OpenPin(_outputPin1, PinMode.Output, PinValue.Low);
             _controller.OpenPin(_outputPin2, PinMode.Output, PinValue.Low);
             _controller.OpenPin(_outputPin3, PinMode.Output, PinValue.Low);
-            _controller.OpenPin(_inputPin, PinMode.Input);
+            _controller.OpenPin(_inputPin, PinMode.Input, PinValue.Low);
 
             Console.WriteLine("Setting up Pwm Driver");
             _pwmDriver = new Pca9685();
@@ -118,21 +118,30 @@ namespace Control
             _lcd.Clear();
             _lcd.Write(0, 0, "Pi Control");
             _lcd.Write(0, 1, "Started");
-
-            Console.WriteLine("Sending Device ready to IoT Hub");
-            var deviceResponse = new DeviceResponse(Consts.Operations.StartUp) { Message = $"Device {configuration.DeviceId} ready at {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss}" };
-            var message = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(deviceResponse)));
-            await _deviceClient.SendEventAsync(message);
+            await SendMessage(Consts.Events.StartUp, $"Device {configuration.DeviceId} ready");
 
             try
             {
-                Console.WriteLine("Starting Raspberry Pi control, send messages via IoT Explorer to set values");
+                var isInputPressed = false;
+                var wasInputPressed = false;
+                Console.WriteLine("Starting Raspberry Pi control, send messages via IoT Explorer to operate devices on the board");
                 _fourRelayBoard = new FourRelayBoard(0);
                 for (int i = 0; i < 3000; i++)
                 {
-                    //Console.WriteLine($"Values of Relays are 1:{_fourRelayBoard.Get(1)} 2:{_fourRelayBoard.Get(2)} 3:{_fourRelayBoard.Get(3)} 4:{_fourRelayBoard.Get(4)}");
                     Console.Write(".");
-                    await Task.Delay(5000);
+                    for (int j = 0; j < 20; j++) {
+                        isInputPressed = _controller.Read(_inputPin) == PinValue.High;
+                        if (isInputPressed != wasInputPressed)
+                        {
+                            wasInputPressed = isInputPressed;
+                            await SendMessage(Consts.Events.Button, $"Button value is {isInputPressed}");
+                        }
+                        await Task.Delay(250);
+                    }
+                    if (i % 12 == 0 && i > 0)
+                    {
+                        await SendMessage(Consts.Events.IsAlive, $"Device {configuration.DeviceId} is still alive!");
+                    }
                 }
             }
             catch (IOException)
@@ -142,6 +151,14 @@ namespace Control
             }
             Console.WriteLine("Relay Finished, press key to end");
             Console.ReadKey();
+        }
+
+        private static async Task SendMessage(string method, string message = "")
+        {
+            Console.WriteLine($"Sending {method} to IoT Hub");
+            var deviceEvent = new DeviceEvent(method) { Message = message };
+            var deviceMessage = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(deviceEvent)));
+            await _deviceClient.SendEventAsync(deviceMessage);
         }
 
         private static async Task<MethodResponse> ActionMethod(MethodRequest methodRequest, object userContext)
@@ -160,14 +177,14 @@ namespace Control
                         var inputResult = _controller.Read(_inputPin);
                         status = 200;
                         message = $"GetInput: Value is {inputResult}";
-                        await _deviceClient.SendEventAsync(new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new DeviceResponse(Consts.Operations.GetInput) { Message = message } ))));
+                        await SendMessage(Consts.Operations.GetInput, message);
                         break;
                     case Consts.Operations.GetAnalogue:
                         var analogueChannel = (byte) controlAction.Number;
                         var analogueResult = _ads.ReadChannel(analogueChannel);
                         status = 200;
                         message = $"GetAnalogue: Value is {analogueResult}";
-                        await _deviceClient.SendEventAsync(new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new DeviceResponse(Consts.Operations.GetAnalogue) { Message = message } ))));
+                        await SendMessage(Consts.Operations.GetAnalogue, message);
                         break;
                     case Consts.Operations.SetOutput:
                         if (!(controlAction.Number is -1 or -2 or 1 or 2 or 3))
@@ -298,7 +315,7 @@ namespace Control
                             status = 400;
                             message = $"GetRelay - Relay address {getRelayNumber} unknown. Must be 1 to 4 or -1 for all relays";
                         }
-                        await _deviceClient.SendEventAsync(new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new DeviceResponse(controlAction.Method) { Message = message } ))));
+                        await SendMessage(Consts.Operations.GetRelay, message);
                         break;
                     case Consts.Operations.SetRelay:
                         var relay = (int)controlAction.Number;

@@ -55,6 +55,7 @@ namespace UI.Pages
             SelectedRelay = "1";
             SelectedOnOff = false;
             TextDisplayTypes = new List<string> {"Top", "Bottom", "Demo"};
+            EventMessage = "None";
             ChangeDisplay();
             IotHubService.OnEventReceived +=  (sender, args) => { EventReceived((DeviceEventArgs) args); };
             return base.OnInitializedAsync();
@@ -64,6 +65,7 @@ namespace UI.Pages
         {
             EventMessageClass = "alert-info";
             EventMessage = $"{eventArgs.EventDate:dd/MM/yyyy HH:mm:ss} {eventArgs.Method}: {eventArgs.Message}";
+            this.StateHasChanged();
         }
 
         public async Task SendMessage()

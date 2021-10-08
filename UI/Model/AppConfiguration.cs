@@ -7,6 +7,9 @@ namespace UI.Model
 {
     public class AppConfiguration : IAppConfiguration
     {
+        /// <summary>
+        /// Container name in blob storage, must be lowercase
+        /// </summary>
         public string BlobContainerName { get; set; }
         public string BlobStorageConnectionString { get; set; }
         /// <summary>
