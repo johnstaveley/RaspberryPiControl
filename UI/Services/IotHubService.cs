@@ -11,12 +11,12 @@ using UI.Model;
 
 namespace UI.Services
 {
-    public class IotHubService : IIotHubService
+    public class IotHubService : IIotHubService, IDisposable
     {
 
         IAppConfiguration _appConfiguration;
         BlobContainerClient _storageClient;
-        EventProcessorClient eventProcessor;
+        EventProcessorClient _eventProcessor;
         public event EventHandler OnEventReceived = delegate { };
 
         public IotHubService(IAppConfiguration appConfiguration)
@@ -28,13 +28,13 @@ namespace UI.Services
             _storageClient.CreateIfNotExists();
 
             string consumerGroup = EventHubConsumerClient.DefaultConsumerGroupName;
-            eventProcessor = new EventProcessorClient(_storageClient, consumerGroup, _appConfiguration.EventHubConnectionString, 
+            _eventProcessor = new EventProcessorClient(_storageClient, consumerGroup, _appConfiguration.EventHubConnectionString, 
                 _appConfiguration.EventHubName);
 
             // Register handlers for processing events and handling errors
-            eventProcessor.ProcessEventAsync += ProcessEventHandler;
-            eventProcessor.ProcessErrorAsync += ProcessErrorHandler;
-            eventProcessor.StartProcessing();
+            _eventProcessor.ProcessEventAsync += ProcessEventHandler;
+            _eventProcessor.ProcessErrorAsync += ProcessErrorHandler;
+            _eventProcessor.StartProcessing();
         }
 
         public async Task ProcessEventHandler(ProcessEventArgs eventArgs)
@@ -57,5 +57,9 @@ namespace UI.Services
             return Task.CompletedTask;
         }
 
+        public void Dispose()
+        {
+            _eventProcessor?.StopProcessing();
+        }
     }
 }

@@ -138,7 +138,7 @@ namespace Control
                         }
                         await Task.Delay(250);
                     }
-                    if (i % 12 == 0 && i > 0)
+                    if (i % 24 == 0 && i > 0)
                     {
                         await SendMessage(Consts.Events.IsAlive, $"Device {configuration.DeviceId} is still alive!");
                     }
@@ -155,7 +155,7 @@ namespace Control
 
         private static async Task SendMessage(string method, string message = "")
         {
-            Console.WriteLine($"Sending {method} to IoT Hub");
+            Console.WriteLine($"\nSending {method} to IoT Hub");
             var deviceEvent = new DeviceEvent(method) { Message = message };
             var deviceMessage = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(deviceEvent)));
             await _deviceClient.SendEventAsync(deviceMessage);

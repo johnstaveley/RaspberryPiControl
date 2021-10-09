@@ -57,15 +57,17 @@ namespace UI.Pages
             TextDisplayTypes = new List<string> {"Top", "Bottom", "Demo"};
             EventMessage = "None";
             ChangeDisplay();
-            IotHubService.OnEventReceived +=  (sender, args) => { EventReceived((DeviceEventArgs) args); };
+            IotHubService.OnEventReceived +=  (sender, args) => { 
+                EventReceived((DeviceEventArgs) args); 
+                InvokeAsync(StateHasChanged);
+            };
             return base.OnInitializedAsync();
         }
 
         private void EventReceived(DeviceEventArgs eventArgs)
         {
             EventMessageClass = "alert-info";
-            EventMessage = $"{eventArgs.EventDate:dd/MM/yyyy HH:mm:ss} {eventArgs.Method}: {eventArgs.Message}";
-            this.StateHasChanged();
+            EventMessage = $"{eventArgs.EventDate:dd/MM/yyyy HH:mm:ss} {eventArgs.Method}: {eventArgs.Message}";            
         }
 
         public async Task SendMessage()
