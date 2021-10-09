@@ -119,7 +119,7 @@ namespace Control
             _lcd.Write(0, 0, "Pi Control");
             _lcd.Write(0, 1, "Started");
             await SendMessage(Consts.Events.StartUp, $"Device {configuration.DeviceId} ready");
-
+            var aliveCount = 1;
             try
             {
                 var isInputPressed = false;
@@ -130,7 +130,7 @@ namespace Control
                 {
                     Console.Write(".");
                     for (int j = 0; j < 20; j++) {
-                        isInputPressed = _controller.Read(_inputPin) == PinValue.High;
+                        isInputPressed = _controller.Read(_inputPin) == PinValue.Low;
                         if (isInputPressed != wasInputPressed)
                         {
                             wasInputPressed = isInputPressed;
@@ -140,7 +140,8 @@ namespace Control
                     }
                     if (i % 24 == 0 && i > 0)
                     {
-                        await SendMessage(Consts.Events.IsAlive, $"Device {configuration.DeviceId} is still alive!");
+                        await SendMessage(Consts.Events.IsAlive, $"Device {configuration.DeviceId} is still alive after {aliveCount * 2} minutes");
+                        aliveCount++;
                     }
                 }
             }
@@ -236,7 +237,7 @@ namespace Control
                         }
                         break;
                     case Consts.Operations.SetPwm:
-                        if (!(controlAction.Value is >= 0 and <= 1))
+                        if (controlAction.Value is not (>= 0 and <= 1) && controlAction.Value != -0.01)
                         {
                             status = 400;
                             message = $"Pwm value of {controlAction.Value} is illegal, must be between 0 and 1 inclusive";
@@ -253,7 +254,23 @@ namespace Control
                                 {
                                     channel = (Pca9685.PwmChannel)((int)(controlAction.Number));
                                 }
-                                _pwmDriver.SetDutyCycle(channel, controlAction.Value * 100);
+                                if (controlAction.Value >= 0) {
+                                    _pwmDriver.SetDutyCycle(channel, controlAction.Value * 100);
+                                } else {
+                                    for (int cycle = 0; cycle < 2; cycle++)
+                                    {
+                                        for (int duty = 0; duty < 100; duty++)
+                                        {
+                                            _pwmDriver.SetDutyCycle(channel, duty);
+                                            Thread.Sleep(40);
+                                        }
+                                        for (int duty = 100; duty >= 0; duty--)
+                                        {
+                                            _pwmDriver.SetDutyCycle(channel, duty);
+                                            Thread.Sleep(40);
+                                        }
+                                    }
+                                }
                             }
                             else
                             {
