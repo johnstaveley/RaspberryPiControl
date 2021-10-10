@@ -2,6 +2,7 @@
 using Common.Model;
 using Control.Hardware;
 using Control.Model;
+using Iot.Device.Media;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ using System.Device.Gpio;
 using System.Device.Pwm.Drivers;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -187,6 +189,23 @@ namespace Control
                         message = $"GetAnalogue: Value is {analogueResult}";
                         await SendMessage(Consts.Operations.GetAnalogue, message);
                         break;
+                    case Consts.Operations.PlaySound:
+                        status = 400;
+                        message = "not implemented";
+                        break;
+                        // This currently fails with a stack overflow exception
+                        //SoundConnectionSettings soundSettings = new SoundConnectionSettings();
+                        //SoundDevice soundDevice = SoundDevice.Create(soundSettings);
+                        //try {
+                        //    var assembly = Assembly.GetExecutingAssembly();
+                        //    var mediaPath = new FileInfo(assembly.Location).DirectoryName + "/Media/depressed.mp3";
+                        //    soundDevice.Play(mediaPath);
+                        //} finally {
+                        //    soundDevice.Dispose();
+                        //}
+                        //status = 200;
+                        //message = $"PlaySound: Ok";
+                        //break;
                     case Consts.Operations.SetOutput:
                         if (!(controlAction.Number is -1 or -2 or 1 or 2 or 3))
                         {

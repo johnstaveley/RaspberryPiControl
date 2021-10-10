@@ -9,6 +9,7 @@
             public const string GetAnalogue = "GetAnalogue";
             public const string GetInput = "GetInput";
             public const string GetRelay = "GetRelay";
+            public const string PlaySound = "PlaySound";
             public const string SetOutput = "SetOutput";
             public const string SetPwm = "SetPwm";
             public const string SetRelay = "SetRelay";
@@ -25,6 +26,7 @@
         public static string[] OperationList = new[] { 
             Operations.GetInput, 
             Operations.GetRelay, 
+            Operations.PlaySound, 
             Operations.SetOutput, 
             Operations.SetPwm, 
             Operations.SetRelay, 
