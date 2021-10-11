@@ -8,6 +8,14 @@ namespace UI.Model
     public class AppConfiguration : IAppConfiguration
     {
         /// <summary>
+        /// Username to login with
+        /// </summary>
+        public string ApplicationUserName {get; set;}
+        /// <summary>
+        /// Password to login with
+        /// </summary>
+        public string ApplicationPassword {get; set;}
+        /// <summary>
         /// Container name in blob storage, must be lowercase
         /// </summary>
         public string BlobContainerName { get; set; }
@@ -31,6 +39,8 @@ namespace UI.Model
                 .AddJsonFile("appsettings.Production.json", optional: true, reloadOnChange: true)
                 .AddUserSecrets(assembly, optional: false)
                 .Build();
+            ApplicationUserName = config["ApplicationUserName"];
+            ApplicationPassword = config["ApplicationPassword"];
             BlobContainerName = config["BlobContainerName"];
             BlobStorageConnectionString = config["BlobStorageConnectionString"];
             DeviceId = config["DeviceId"];

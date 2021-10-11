@@ -3,6 +3,14 @@
     public interface IAppConfiguration
     {
         /// <summary>
+        /// Username to login with
+        /// </summary>
+        string ApplicationUserName {get; set;}
+        /// <summary>
+        /// Password to login with
+        /// </summary>
+        string ApplicationPassword {get; set;}
+        /// <summary>
         /// Container name in blob storage, must be lowercase
         /// </summary>
         string BlobContainerName { get; set; }

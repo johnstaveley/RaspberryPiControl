@@ -1,9 +1,10 @@
 ﻿@page "/"
-@namespace UI.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@namespace UI.Pages
 @{
     Layout = null;
 }
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,7 +18,16 @@
     <link href="UI.styles.css" rel="stylesheet" />
 </head>
 <body>
-    <component type="typeof(App)" render-mode="ServerPrerendered" />
+    @{
+        var initialTokenState = new UI.Services.InitialApplicationState
+        {
+            XsrfToken = Xsrf.GetAndStoreTokens(HttpContext).RequestToken,
+            Cookie = HttpContext.Request.Cookies[".AspNetCore.Cookies"]
+        };
+    }
+    <app>
+        <component type="typeof(App)" render-mode="ServerPrerendered" param-InitialState="initialTokenState" />
+    </app>
 
     <div id="blazor-error-ui">
         <environment include="Staging,Production">

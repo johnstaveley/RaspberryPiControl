@@ -1,81 +1,8 @@
 ﻿@page "/"
 
-<h1>Raspberry Pi Control</h1>
-<div class="form-group row">
-    <label for="SelectedOperation" class="col-sm-3">Select an operation: </label>
-    <select id="SelectedOperation" @onchange="ChangeOperation" class="form-control col-sm-3">
-        @foreach (var operation in Operations)
-        {
-            <option value='@operation'>@operation</option>
-        }
-    </select>
-    <br />
-</div>
-<div class="form-group row" hidden="@HideRelay">
-    <label for="SelectedRelay" class="col-sm-3">Select a Relay:</label>
-    <select id="SelectedRelay" @onchange="ChangeRelay" class="form-control col-sm-3">
-        @foreach (var relay in Relays)
-        {
-            <option value='@relay'>@relay</option>
-        }
-    </select>
-</div>
-<div class="form-group row" hidden="@HideOutputs">
-    <label for="SelectedOutput" class="col-sm-3">Select an output:</label>
-    <select id="SelectedOutput" @onchange="ChangeOutput" class="form-control col-sm-3">
-        @foreach (var output in Outputs)
-        {
-        <option value='@output'>@output</option>
-        }
-    </select>
-</div>
-<div class="form-group row" hidden="@HideOnOff">
-    <label for="SelectedOnOff" class="col-sm-3">Select a value to send:</label>
-    <select id="SelectedOnOff" @onchange="ChangeOnOff" class="form-control col-sm-3">
-        @foreach (var onOff in OnOff)
-        {
-            <option value='@onOff'>@onOff</option>
-        }
-    </select>
-</div>
-<div class="form-group row" hidden="@HideTextDisplay">
-    <label for="SelectedPwm" class="col-sm-3">Select display type:</label>
-    <select id="SelectedPwm" @onchange="ChangeTextDisplay" class="form-control col-sm-3">
-        @foreach (var textDisplayType in TextDisplayTypes)
-        {
-        <option value='@textDisplayType'>@textDisplayType</option>
-        }
-    </select>
-</div>
-<div class="form-group row" hidden="@HideText">
-    <label for="SelectedText" class="col-sm-3">Select text to display:</label>
-    <input type="text" id="SelectedText" @onchange="ChangeText" class="form-control col-sm-3" />
-</div>
-<div class="form-group row" hidden="@HidePwm">
-    <label for="SelectedPwm" class="col-sm-3">Select Pwm Channel:</label>
-    <select id="SelectedPwm" @onchange="ChangePwm" class="form-control col-sm-3">
-        @foreach (var pwm in Pwms)
-        {
-            <option value='@pwm'>@pwm</option>
-        }
-    </select>
-</div>
-<div class="form-group row" hidden="@HideValue">
-    <label for="SelectedValue" class="col-sm-3">Enter a value: (0-100)</label>
-    <input type="text" id="SelectedValue" @onchange="ChangeValue" class="form-control col-sm-3" />
-</div>
+<h1 class="page-title">Welcome to Raspberry Pi Control</h1>
+
 <br />
-<div class="form-group row">
-    <div class="col-sm-2 offset-5">
-        <button class="btn btn-primary" @onclick="SendMessage">Execute</button>
-    </div>
-</div>
-<div class="form-group row">
-    <div class="@MessageClass">@Message</div>
-</div>
-<div class="form-group row">
-    <div>Message from device:</div>
-</div>
-<div class="form-group row">
-    <div class="@EventMessageClass">@EventMessage</div>
-</div>
+
+<h3>Please login to continue using this application</h3>
+
