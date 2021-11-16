@@ -7,6 +7,7 @@
         public static class Operations
         {
             public const string GetAnalogue = "GetAnalogue";
+            public const string GetEnvironment = "GetEnvironment";
             public const string GetInput = "GetInput";
             public const string GetRelay = "GetRelay";
             public const string PlaySound = "PlaySound";
@@ -24,6 +25,7 @@
         }
 
         public static string[] OperationList = new[] { 
+            Operations.GetEnvironment, 
             Operations.GetInput, 
             Operations.GetRelay, 
             Operations.PlaySound, 

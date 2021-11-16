@@ -2,17 +2,18 @@
 using Common.Model;
 using Control.Hardware;
 using Control.Model;
-using Iot.Device.Media;
+using Iot.Device.Bmxx80;
+using Iot.Device.Rfid;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Device.Gpio;
+using System.Device.I2c;
 using System.Device.Pwm.Drivers;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,34 +38,8 @@ namespace Control
         static int _outputPin1;
         static int _outputPin2;
         static int _outputPin3;
-        static byte[] _smile = new byte[]
-        { 0b00111100,
-            0b01000010,
-            0b10100101,
-            0b10000001,
-            0b10100101,
-            0b10011001,
-            0b01000010,
-            0b00111100 };
-        static byte[] _neutral = new byte[]
-        { 0b00111100,
-            0b01000010,
-            0b10100101,
-            0b10000001,
-            0b10111101,
-            0b10000001,
-            0b01000010,
-            0b00111100 };
-        static byte[] _frown = new byte[]
-        { 0b00111100,
-            0b01000010,
-            0b10100101,
-            0b10000001,
-            0b10011001,
-            0b10100101,
-            0b01000010,
-            0b00111100 };
-        //static LedGrid _matrix = new LedGrid();
+        //static MfRc522 _rfid = null;
+        static Bmp280 _environmentSensor;
 
         static async Task Main(string[] args)
         {
@@ -86,13 +61,23 @@ namespace Control
 
             _outputPin1 = 17; // board pin 11
             _outputPin2 = 27; // board pin 13
-            _outputPin3 = 16; // board pin 36
+            _outputPin3 = 20; // board pin 38
             _inputPin = 22; // board pin 15
             _controller = new();
             _controller.OpenPin(_outputPin1, PinMode.Output, PinValue.Low);
             _controller.OpenPin(_outputPin2, PinMode.Output, PinValue.Low);
             _controller.OpenPin(_outputPin3, PinMode.Output, PinValue.Low);
             _controller.OpenPin(_inputPin, PinMode.Input, PinValue.Low);
+
+            Console.WriteLine("Setting up environment sensor");
+
+            const int busId = 1;
+            I2cConnectionSettings i2cSettings = new(busId, 118);
+            I2cDevice i2cDevice = I2cDevice.Create(i2cSettings);
+            _environmentSensor = new Bmp280(i2cDevice);
+            // set higher sampling
+            _environmentSensor.TemperatureSampling = Sampling.LowPower;
+            _environmentSensor.PressureSampling = Sampling.UltraHighResolution;
 
             Console.WriteLine("Setting up Pwm Driver");
             _pwmDriver = new Pca9685();
@@ -114,35 +99,52 @@ namespace Control
             Console.WriteLine("Successfully got twin for the device", ConsoleColor.Green);
             //if (twin != null) Console.WriteLine(twin.ToString(), ConsoleColor.Green);
             await StartListeningForDesiredPropertyChanges(_deviceClient);
-            Console.WriteLine("Setting up board");
+            //Console.WriteLine("Setting up RFID");
+            //Board board = Board.Create();
+            //// Here you can use as well MfRc522.MaximumSpiClockFrequency which is 10_000_000
+            //// Anything lower will work as well
+            //SpiConnectionSettings connection = new(0, 1) {ClockFrequency = 5_000_000};
+            //SpiDevice spi = board.CreateSpiDevice(connection);
+            //_rfid = new(spi, 4, _controller, false);
+            //Console.WriteLine($"RFID Board Version: {_rfid.Version}"); // version should be 1 or 2. Some clones may appear with version 0
+
+            Console.WriteLine("Setting up LCD");
             _lcd = new Lcd1602();
             _lcd.Init();
             _lcd.Clear();
             _lcd.Write(0, 0, "Pi Control");
             _lcd.Write(0, 1, "Started");
+            _fourRelayBoard = new FourRelayBoard(0);
             await SendMessage(Consts.Events.StartUp, $"Device {configuration.DeviceId} ready");
             var aliveCount = 1;
             try
             {
-                var isInputPressed = false;
                 var wasInputPressed = false;
                 Console.WriteLine("Starting Raspberry Pi control, send messages via IoT Explorer to operate devices on the board");
-                _fourRelayBoard = new FourRelayBoard(0);
+                bool rfidRead;
+                Data106kbpsTypeA rfidCard;
                 for (int i = 0; i < 3000; i++)
                 {
                     Console.Write(".");
                     for (int j = 0; j < 20; j++) {
-                        isInputPressed = _controller.Read(_inputPin) == PinValue.Low;
+                        var isInputPressed = _controller.Read(_inputPin) == PinValue.Low;
                         if (isInputPressed != wasInputPressed)
                         {
                             wasInputPressed = isInputPressed;
                             await SendMessage(Consts.Events.Button, $"Button value is {isInputPressed}");
                         }
+                        //rfidRead = _rfid.ListenToCardIso14443TypeA(out rfidCard, TimeSpan.FromSeconds(2));
+                        //if (rfidRead)
+                        //{
+                        //    Console.WriteLine("RFID Detected");
+                        //    Rfid.Process(rfidCard, _rfid);
+                        //}
                         await Task.Delay(250);
                     }
                     if (i % 24 == 0 && i > 0)
                     {
-                        await SendMessage(Consts.Events.IsAlive, $"Device {configuration.DeviceId} is still alive after {aliveCount * 2} minutes");
+                        var environment = ReadEnvironment();
+                        await SendMessage(Consts.Events.IsAlive, $"Device {configuration.DeviceId} is still alive after {aliveCount * 2} minutes. {environment}");
                         aliveCount++;
                     }
                 }
@@ -154,6 +156,16 @@ namespace Control
             }
             Console.WriteLine("Relay Finished, press key to end");
             Console.ReadKey();
+        }
+
+        private static string ReadEnvironment()
+        {
+            // Perform a synchronous measurement
+            var readResult = _environmentSensor.Read();
+
+            var environmentReadings = $"Temperature: {readResult.Temperature?.DegreesCelsius:0.#}\u00B0C Pressure: {readResult.Pressure?.Hectopascals:0.##}hPa";
+            Console.WriteLine("\n" + environmentReadings);
+            return environmentReadings;
         }
 
         private static async Task SendMessage(string method, string message = "")
@@ -181,6 +193,11 @@ namespace Control
                         status = 200;
                         message = $"GetInput: Value is {inputResult}";
                         await SendMessage(Consts.Operations.GetInput, message);
+                        break;
+                    case Consts.Operations.GetEnvironment:
+                        var environmentResult = ReadEnvironment();
+                        status = 200;
+                        message = $"GetEnvironment: {environmentResult}";
                         break;
                     case Consts.Operations.GetAnalogue:
                         var analogueChannel = (byte) controlAction.Number;
