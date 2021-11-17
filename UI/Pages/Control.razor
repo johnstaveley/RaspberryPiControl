@@ -11,12 +11,12 @@
     </select>
     <br />
 </div>
-<div class="form-group row" hidden="@HideRelay">
-    <label for="SelectedRelay" class="col-sm-3">Select a Relay:</label>
-    <select id="SelectedRelay" @onchange="ChangeRelay" class="form-control col-sm-3">
-        @foreach (var relay in Relays)
+<div class="form-group row" hidden="@HideChannel">
+    <label for="SelectedChannel" class="col-sm-3">Select a Channel:</label>
+    <select id="SelectedChannel" @onchange="ChangeChannel" class="form-control col-sm-3">
+        @foreach (var channel in Channels)
         {
-            <option value='@relay'>@relay</option>
+            <option value='@channel'>@channel</option>
         }
     </select>
 </div>

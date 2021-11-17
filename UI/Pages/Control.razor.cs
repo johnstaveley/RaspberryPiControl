@@ -22,20 +22,20 @@ namespace UI.Pages
         public List<string> Operations { get; set; }
         public List<int> Pwms { get; set; }
         public List<string> Outputs { get; set; }
-        public List<string> Relays { get; set; }
+        public List<string> Channels { get; set; }
         public List<string> TextDisplayTypes { get; set; }
         public bool SelectedOnOff { get; set; }
         public string SelectedOperation = "(Please Select)";
         public int SelectedOutput { get; set; } = 1;
         public int SelectedPwm { get; set; }
-        public string SelectedRelay { get; set; }
+        public string SelectedChannel { get; set; }
         public string SelectedText { get; set; }
         public int SelectedTextDisplay { get; set; }
         public double SelectedValue { get; set; }
         public bool HideOnOff { get; set; } = false;
         public bool HideOutputs { get; set; } = false;
         public bool HidePwm { get; set; } = false;
-        public bool HideRelay { get; set; } = false;
+        public bool HideChannel { get; set; } = false;
         public bool HideText { get; set; } = false;
         public bool HideTextDisplay { get; set; } = false;
         public bool HideValue { get; set; } = false;
@@ -52,9 +52,9 @@ namespace UI.Pages
             Operations.Insert(0, "(Please Select)");
             Outputs = new List<string> { "1", "2", "3", "All", "Cycle" };
             Pwms = Enumerable.Range(0, 16).ToList();
-            Relays = new List<string> { "1", "2", "3", "4", "All" };
+            Channels = new List<string> { "1", "2", "3", "4", "All" };
             SelectedOperation = "(Please Select)";
-            SelectedRelay = "1";
+            SelectedChannel = "1";
             SelectedOnOff = false;
             TextDisplayTypes = new List<string> {"Top", "Bottom", "Demo"};
             EventMessage = "None";
@@ -87,9 +87,13 @@ namespace UI.Pages
                 string text = "";
                 switch (SelectedOperation)
                 {
+                    case Consts.Operations.GetAnalogue:
+                        if (SelectedChannel == "All") SelectedChannel = "0";
+                        number = int.Parse(SelectedChannel);
+                        break;
                     case Consts.Operations.GetRelay:
-                        if (SelectedRelay == "All") SelectedRelay = "-1";
-                        number = int.Parse(SelectedRelay);
+                        if (SelectedChannel == "All") SelectedChannel = "-1";
+                        number = int.Parse(SelectedChannel);
                         break;
                     case Consts.Operations.SetOutput:
                         number = SelectedOutput;
@@ -101,8 +105,8 @@ namespace UI.Pages
                         text = SelectedText;
                         break;
                     case Consts.Operations.SetRelay:
-                        if (SelectedRelay == "All") SelectedRelay = "-1";
-                        number = int.Parse(SelectedRelay);
+                        if (SelectedChannel == "All") SelectedChannel = "-1";
+                        number = int.Parse(SelectedChannel);
                         value = SelectedOnOff ? 1 : 0;
                         break;
                     case Consts.Operations.SetPwm:
@@ -129,7 +133,7 @@ namespace UI.Pages
         private void ChangeDisplay(string operation = null)
         {
             HidePwm = true;
-            HideRelay = true;
+            HideChannel = true;
             HideOnOff = true;
             HideOutputs = true;
             HideText = true;
@@ -137,8 +141,11 @@ namespace UI.Pages
             HideValue = true;
             switch (operation)
             {
+                case Consts.Operations.GetAnalogue:
+                    HideChannel = false;
+                    break;
                 case Consts.Operations.GetRelay:
-                    HideRelay = false;
+                    HideChannel = false;
                     break;
                 case Consts.Operations.SetOutput:
                     HideOnOff = false;
@@ -149,7 +156,7 @@ namespace UI.Pages
                     HideValue = false;
                     break;
                 case Consts.Operations.SetRelay:
-                    HideRelay = false;
+                    HideChannel = false;
                     HideOnOff = false;
                     break;
                 case (Consts.Operations.SetText):
@@ -189,9 +196,9 @@ namespace UI.Pages
         {
             SelectedPwm = int.Parse(e.Value.ToString());
         }
-        public void ChangeRelay(ChangeEventArgs e)
+        public void ChangeChannel(ChangeEventArgs e)
         {
-            SelectedRelay = e.Value.ToString();
+            SelectedChannel = e.Value.ToString();
         }
         public void ChangeText(ChangeEventArgs e)
         {

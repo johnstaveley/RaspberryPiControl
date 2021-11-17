@@ -2,6 +2,7 @@
 using Common.Model;
 using Control.Hardware;
 using Control.Model;
+using Iot.Device.Ads1115;
 using Iot.Device.Bmxx80;
 using Iot.Device.Rfid;
 using Microsoft.Azure.Devices.Client;
@@ -33,7 +34,7 @@ namespace Control
         static Lcd1602 _lcd;
         static bool ledState1;
         static System.Device.Gpio.GpioController _controller;
-        static ADS1115 _ads;
+        static Ads1115 _ads;
         static int _inputPin;
         static int _outputPin1;
         static int _outputPin2;
@@ -89,7 +90,9 @@ namespace Control
             _pwmDriver.SetAllCall(true);
 
             Console.WriteLine("Starting Ads");
-            _ads = new ADS1115();
+            I2cConnectionSettings settings = new I2cConnectionSettings(1, (int)I2cAddress.GND);
+            I2cDevice ads1115Device = I2cDevice.Create(settings);
+            _ads = new Ads1115(ads1115Device, InputMultiplexer.AIN0, MeasuringRange.FS6144);
 
             Console.WriteLine("Setting up IoT Hub");
             _deviceClient = DeviceClient.CreateFromConnectionString(configuration.IoTHubConnectionString);
@@ -201,9 +204,24 @@ namespace Control
                         break;
                     case Consts.Operations.GetAnalogue:
                         var analogueChannel = (byte) controlAction.Number;
-                        var analogueResult = _ads.ReadChannel(analogueChannel);
+                        UnitsNet.ElectricPotential voltage;
+                        switch (analogueChannel)
+                        {
+                            default:
+                                voltage = _ads.ReadVoltage(InputMultiplexer.AIN0);
+                                break;
+                            case 2:
+                                voltage = _ads.ReadVoltage(InputMultiplexer.AIN1);
+                                break;
+                            case 3:
+                                voltage = _ads.ReadVoltage(InputMultiplexer.AIN2);
+                                break;
+                            case 4:
+                                voltage = _ads.ReadVoltage(InputMultiplexer.AIN3);
+                                break;
+                        }
                         status = 200;
-                        message = $"GetAnalogue: Value is {analogueResult}";
+                        message = $"GetAnalogue: Channel {analogueChannel} Value is {voltage:s3}";
                         break;
                     case Consts.Operations.PlaySound:
                         status = 400;

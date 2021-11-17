@@ -25,6 +25,7 @@
         }
 
         public static string[] OperationList = new[] { 
+            Operations.GetAnalogue, 
             Operations.GetEnvironment, 
             Operations.GetInput, 
             Operations.GetRelay, 
