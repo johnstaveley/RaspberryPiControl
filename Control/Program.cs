@@ -204,7 +204,6 @@ namespace Control
                         var analogueResult = _ads.ReadChannel(analogueChannel);
                         status = 200;
                         message = $"GetAnalogue: Value is {analogueResult}";
-                        await SendMessage(Consts.Operations.GetAnalogue, message);
                         break;
                     case Consts.Operations.PlaySound:
                         status = 400;
