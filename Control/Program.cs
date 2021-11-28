@@ -205,13 +205,16 @@ namespace Control
                     case Consts.Operations.GetAnalogue:
                         var analogueChannel = (byte) controlAction.Number;
                         UnitsNet.ElectricPotential voltage;
+                        string analogueDescription = "";
                         switch (analogueChannel)
                         {
                             default:
                                 voltage = _ads.ReadVoltage(InputMultiplexer.AIN0);
+                                analogueDescription = GetIntensity(voltage, 0);
                                 break;
                             case 2:
                                 voltage = _ads.ReadVoltage(InputMultiplexer.AIN1);
+                                analogueDescription = GetIntensity(voltage, 1);
                                 break;
                             case 3:
                                 voltage = _ads.ReadVoltage(InputMultiplexer.AIN2);
@@ -221,7 +224,7 @@ namespace Control
                                 break;
                         }
                         status = 200;
-                        message = $"GetAnalogue: Channel {analogueChannel} Value is {voltage:s3}";
+                        message = $"GetAnalogue: Channel {analogueChannel} Value is {voltage:s3} which is {analogueDescription}";
                         break;
                     case Consts.Operations.PlaySound:
                         status = 400;
@@ -521,6 +524,17 @@ namespace Control
             {
                 ConsoleHelper.WriteRedMessage($"* ERROR * {ex.Message}");
             }
+        }
+
+        private static string GetIntensity(UnitsNet.ElectricPotential voltage, int mode)
+        {
+            // 3.2 volts for LDR, 4.8 for potentiometer
+            double upperBoundVolts = mode == 0 ? 3.2D : 4.8D; // Low intensity
+            var percentage = (1.0 - (voltage.Value / upperBoundVolts )) * 100.0;
+            var description = "Normal";
+            if (percentage < 25.0) { description = "Low";}
+            if (percentage > 75.0) { description = "High";}
+            return $"{percentage:0.0}% {description}";
         }
     }
 }
