@@ -18,9 +18,9 @@ Hardware includes:
 - LCD 1602 with I2C interface. GND Pin 39, 5V Pin 2, SDA Pin 3, SCL Pin 5 such as this one: https://www.amazon.co.uk/gp/product/B07J2Q9LB7/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1
 - Connect Pi and relay board to 5V 3A supply
 - Mounting components on Din rail is optional but just helps to make things tidier
-- In Azure. Iot Hub and go to the following blades:
+- In Azure. Create Iot Hub in standard tier and go to the following blades:
   - Shared access policy. For DEVICE and put in IoTHubConnectionString 
-  - IoT Devices. Add your Raspberry Pi
+  - IoT Devices. Add your Raspberry Pi, give device name e.g. RaspberryPi4
   - Networking. Don't put in IP restrictions if you want your azure function to be able to contact the IoT Hub
 - In order to get the program to run when the Pi is started, do the following:
   - sudo nano /etc/rc.local
@@ -30,7 +30,17 @@ Hardware includes:
 
 ## Blazor App Setup
 
-- Shared access policy. For SERVICE and put in IoTHubConnectionString 
+- In Azure. 
+  - Create blob storage and copy the connection string
+
+ appsettings.json
+- ApplicationUserName / ApplicationPassword - Make up a username/password combination
+- BlobContainerName - e.g. pieventhub
+- BlobStorageConnectionString - The connection string from above Azure
+- DeviceId - device name as configured above e.g. RaspberryPi4
+- EventHubConnectionString - Taken from IoTHub -> built in endpoints - Event hub-compatible endpoint
+- EventHubName - Taken from ??
+- IoTHubConnectionString - Take from device, shared access policy
 
 ## Operation
 
