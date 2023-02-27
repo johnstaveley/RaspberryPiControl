@@ -2,12 +2,13 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <UserSecretsId>7fb36db4-df05-40b2-8c42-68513e02f416</UserSecretsId>
+    <ApplicationInsightsResourceId>/subscriptions/f207138f-f474-4676-af3b-483d10aff9b6/resourceGroups/RaspControl/providers/microsoft.insights/components/raspcontrol</ApplicationInsightsResourceId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.6.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="5.0.10" />
-    <PackageReference Include="Microsoft.Azure.Devices" Version="1.35.0" />
-    <PackageReference Include="Microsoft.Azure.EventHubs.Processor" Version="4.3.2" />
+    <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.7.5" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.3" />
+    <PackageReference Include="Microsoft.Azure.Devices" Version="1.38.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
