@@ -37,7 +37,7 @@ namespace UI.Model
                 .SetBasePath(new FileInfo(assembly.Location).DirectoryName)
                 .AddJsonFile("appsettings.json", true, true)
                 .AddJsonFile("appsettings.Production.json", optional: true, reloadOnChange: true)
-                .AddUserSecrets(assembly, optional: false)
+                .AddUserSecrets(assembly, optional: true)
                 .Build();
             ApplicationUserName = config["ApplicationUserName"];
             ApplicationPassword = config["ApplicationPassword"];
