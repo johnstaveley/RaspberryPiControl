@@ -51,7 +51,6 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'RazorControl'
-          slot-name: 'Production'
+          app-name: 'raspcontrol'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C7FB691E68D04831B32143E39D0A8362 }}
           package: .

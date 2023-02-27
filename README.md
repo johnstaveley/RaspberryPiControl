@@ -38,8 +38,8 @@ Hardware includes:
 - BlobContainerName - e.g. pieventhub
 - BlobStorageConnectionString - The connection string from above Azure
 - DeviceId - device name as configured above e.g. RaspberryPi4
-- EventHubConnectionString - Taken from IoTHub -> built in endpoints - Event hub-compatible endpoint
-- EventHubName - Taken from ??
+- EventHubConnectionString - Taken from IoTHub -> built in endpoints -> Event hub-compatible endpoint
+- EventHubName - Taken from IoTHub -> built in endpoints -> Event hub-compatible name
 - IoTHubConnectionString - Take from device, shared access policy
 
 ## Operation
