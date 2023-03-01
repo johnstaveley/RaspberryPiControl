@@ -22,6 +22,12 @@ Hardware includes:
   - Shared access policy. For DEVICE and put in IoTHubConnectionString 
   - IoT Devices. Add your Raspberry Pi, give device name e.g. RaspberryPi4
   - Networking. Don't put in IP restrictions if you want your azure function to be able to contact the IoT Hub
+- ![Install .Net 7 SDK](https://www.petecodes.co.uk/install-and-use-microsoft-dot-net-7-with-the-raspberry-pi/) and reboot the device
+- Publish the code to a directory called Control on the device
+- Log into the Raspberry Pi and in a command prompt:
+  - cd Control
+  - chown pi ./Control
+  - chmod +rwx ./Control
 - In order to get the program to run when the Pi is started, do the following:
   - sudo nano /etc/rc.local
   - Just before the Exit command at the end, put in bash /home/pi/Control/Control &
