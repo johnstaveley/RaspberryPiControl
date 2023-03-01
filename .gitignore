@@ -364,3 +364,5 @@ FodyWeavers.xsd
 /.vscode
 /UI/appsettings.Production.json
 /Control/appsettings.Production.json
+/UI/appsettings.json
+/UI/appsettings.json
