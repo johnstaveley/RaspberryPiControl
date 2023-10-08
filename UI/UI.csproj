@@ -5,10 +5,10 @@
     <ApplicationInsightsResourceId>/subscriptions/f207138f-f474-4676-af3b-483d10aff9b6/resourceGroups/RaspControl/providers/microsoft.insights/components/raspcontrol</ApplicationInsightsResourceId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.7.5" />
+    <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.9.3" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.3" />
-    <PackageReference Include="Microsoft.Azure.Devices" Version="1.38.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.11" />
+    <PackageReference Include="Microsoft.Azure.Devices" Version="1.39.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
